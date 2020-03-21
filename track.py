@@ -18,8 +18,8 @@ class Track:
 
 # Computes the equations for the circles and intersection points of track
   def initializeTrack(self, vehiclesLeft, vehiclesRight):
-    (h1, k1, r1) = computeCircle([(car.x,car.y) for car in vehiclesLeft])
-    (h2, k2, r2) = computeCircle([(car.x,car.y) for car in vehiclesRight])
+    (h1, k1, r1) = computeCircle([car.get_position() for car in vehiclesLeft])
+    (h2, k2, r2) = computeCircle([car.get_position() for car in vehiclesRight])
     points = findIntersection(h1, k1, r1, h2, k2, r2)
     self.intersect1 = points[0]
     self.intersect2 = points[1]
