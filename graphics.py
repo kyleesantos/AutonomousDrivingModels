@@ -1,7 +1,7 @@
 from track import Track
 from vehicle import Vehicle
 import tkinter as tk
-import itertools
+import itertools, math
 
 root = tk.Tk()
 TK_SILENCE_DEPRECATION=1
@@ -17,21 +17,18 @@ vehicles = []
 
 def keyPress(event):
 	global move
-	if (move): move = False
-	else: 
-		move = True
+	move = not move
 
-
-def flatten(list):
-	return itertools.chain.from_iterable(list)
+def flatten(l):
+	return [item for tup in l for item in tup]
 
 def makeVehicle(x, y, r, theta):
 	# Add Vehicle
 	veh = Vehicle(x, y, r, theta)
-	vehCanvas = canvas.create_polygon(veh.getVehPoints(), fill = 'red')
+	vehCanvas = canvas.create_polygon(veh.getVehPoints(), fill='red')
 	wheelsCanvas = []
 	for wP in veh.getWheelPoints():
-		wheelsCanvas.append(canvas.create_polygon(wP, fill = 'black'))
+		wheelsCanvas.append(canvas.create_polygon(wP, fill='black'))
 	vehicles.append((veh, vehCanvas, wheelsCanvas))
 
 def vehiclesMove():
@@ -43,19 +40,19 @@ def vehiclesMove():
 				w = wheelsCanvas[i]
 				wP = v.getWheelPoints()[i]
 				canvas.coords(w, *flatten(wP))
-	# vehiclesMove()
 	root.after(1, vehiclesMove)
 
 
 if __name__ == "__main__":
-	canvas.create_text(canvasWidth/2, margin, 
+	canvas.create_text(canvasWidth/2, margin,
 		text='Cooperative vs Non-Cooperative Autonomous Driving')
 
-	# Add Track 
+	# Add Track
 	trackLeftX = canvasWidth//4
 	trackLeftY = canvasHeight//2
 
-	makeVehicle(trackLeftX, trackLeftY, margin * 5, 0)
+	makeVehicle(trackLeftX, trackLeftY, margin * 6, 0)
+	makeVehicle(trackLeftX, trackLeftY, margin * 6, math.pi / 2)
 
 	vehiclesMove()
 
