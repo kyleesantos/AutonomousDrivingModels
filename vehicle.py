@@ -13,18 +13,19 @@ class Vehicle:
     self.speed = 2
     self.trackX = trackX
     self.trackY = trackY
+    print("radius of veh: " + str(r))
     self.r = r
     self.theta = theta
-    vehX = r * math.cos(theta) + self.trackX
-    vehY = r * math.sin(theta) + self.trackY
-    self.createVehicle(vehX, vehY, VEH_WIDTH, VEH_LENGTH)
+    vehX = r + self.trackX
+    vehY = self.trackY
+    self.createVehicle(vehX, vehY)
 
 
-  def createVehicle(self, x, y, width, length):
-      self.vehPoints = [(x - width, y - length),
-                          (x - width, y + length),
-                          (x + width, y + length),
-                          (x + width, y - length)]
+  def createVehicle(self, vehX, vehY):
+      self.vehPoints = [(vehX - VEH_WIDTH, vehY - VEH_LENGTH),
+                          (vehX - VEH_WIDTH, vehY + VEH_LENGTH),
+                          (vehX + VEH_WIDTH, vehY + VEH_LENGTH),
+                          (vehX + VEH_WIDTH, vehY - VEH_LENGTH)]
 
       carWheels = (-5, -15, 5, 15)
       self.wheelPoints = []
@@ -48,6 +49,13 @@ class Vehicle:
       for i in range(len(self.wheelPoints)):
         self.wheelAngles.append(self.getAngles
           (self.wheelPoints[i], self.wheelRadii[i]))
+
+      # triangle direction marker
+      self.dirPoints = [(vehX, vehY - VEH_LENGTH//3), 
+                        (vehX - VEH_WIDTH //2, vehY), 
+                        (vehX + VEH_WIDTH //2, vehY)]
+      self.dirRadii = self.getRadii(self.dirPoints)
+      self.dirAngles = self.getAngles(self.dirPoints, self.dirRadii)
 
       self.initialTurn()
 
@@ -74,6 +82,16 @@ class Vehicle:
           indWheel.append((x, y))
         newWheels.append(indWheel)
       self.wheelPoints = newWheels
+
+      newDir = []
+      for i in range(len(self.dirRadii)):
+        r = self.dirRadii[i]
+        self.dirAngles[i] += (self.theta / (2 * math.pi)) * 360.0
+        a = 2 * math.pi * (self.dirAngles[i] / 360.0)
+        x = self.trackX + r * math.cos(a)
+        y = self.trackY - r * math.sin(a)
+        newDir.append((x, y))
+      self.dirPoints = newDir
 
   # Find the angle of each corner of the vehicle's bounding box
   def getRadii(self, points):
@@ -122,13 +140,25 @@ class Vehicle:
         newWheels.append(indWheel)
       self.wheelPoints = newWheels
 
+      newDir = []
+      for i in range(len(self.dirRadii)):
+        r = self.dirRadii[i]
+        self.dirAngles[i] += self.speed
+        a = 2 * math.pi * (self.dirAngles[i] / 360.0)
+        x = self.trackX + r * math.cos(a)
+        y = self.trackY - r * math.sin(a)
+        newDir.append((x, y))
+      self.dirPoints = newDir
+
 
   def setSpeed(self, speed):
     self.speed = speed
-
 
   def getVehPoints(self):
     return self.vehPoints
 
   def getWheelPoints(self):
     return self.wheelPoints
+
+  def getDirPoints(self):
+    return self.dirPoints

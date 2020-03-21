@@ -1,15 +1,20 @@
 from track import Track
 from vehicle import Vehicle
+import vehicle
 import tkinter as tk
 import itertools, math
 
 root = tk.Tk()
 TK_SILENCE_DEPRECATION=1
 
-canvasWidth = 1200
-canvasHeight = 800
-margin = 20
-canvas = tk.Canvas(root, width=canvasWidth, height=canvasHeight)
+CANVAS_WIDTH = 1200
+CANVAS_HEIGHT = 800
+TRACK_WIDTH = vehicle.VEH_WIDTH * 4
+MARGIN = 60
+
+outR = (CANVAS_WIDTH + TRACK_WIDTH - 2 * MARGIN) // 4
+vehR = outR - (TRACK_WIDTH // 2)
+canvas = tk.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
 move = False
 canvas.pack()
 
@@ -29,30 +34,44 @@ def makeVehicle(x, y, r, theta):
 	wheelsCanvas = []
 	for wP in veh.getWheelPoints():
 		wheelsCanvas.append(canvas.create_polygon(wP, fill='black'))
-	vehicles.append((veh, vehCanvas, wheelsCanvas))
+	dirCanvas = canvas.create_polygon(veh.getDirPoints(), fill = 'yellow')
+	vehicles.append((veh, vehCanvas, wheelsCanvas, dirCanvas))
+
 
 def vehiclesMove():
 	if move:
-		for v, vehCanvas, wheelsCanvas in vehicles:
+		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
 			v.turnLeft()
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
 				w = wheelsCanvas[i]
 				wP = v.getWheelPoints()[i]
 				canvas.coords(w, *flatten(wP))
+			canvas.coords(dirCanvas, *flatten(v.getDirPoints()))
 	root.after(1, vehiclesMove)
 
 
+def drawTrack(x, y, outR, inR):
+	canvas.create_oval(x - outR, y - outR, x + outR, y + outR, 
+		fill = 'darkGreen', outline = "")
+	canvas.create_oval(x - inR, y - inR, x + inR, y + inR,
+		fill = 'white', outline = "")
+
+
 if __name__ == "__main__":
-	canvas.create_text(canvasWidth/2, margin,
+	canvas.create_text(CANVAS_WIDTH/2, MARGIN,
 		text='Cooperative vs Non-Cooperative Autonomous Driving')
 
 	# Add Track
-	trackLeftX = canvasWidth//4
-	trackLeftY = canvasHeight//2
+	trackLeftX = MARGIN + outR
+	trackLeftY = CANVAS_HEIGHT // 2
+	trackRightX = CANVAS_WIDTH - MARGIN - outR
+	drawTrack(trackLeftX, trackLeftY, outR, outR - TRACK_WIDTH)
+	drawTrack(trackRightX, trackLeftY, outR, outR - TRACK_WIDTH)
 
-	makeVehicle(trackLeftX, trackLeftY, margin * 6, 0)
-	makeVehicle(trackLeftX, trackLeftY, margin * 6, math.pi / 2)
+	makeVehicle(trackLeftX, trackLeftY, vehR, 0)
+	makeVehicle(trackLeftX, trackLeftY, vehR, math.pi / 2)
+	makeVehicle(trackRightX, trackLeftY, vehR, 0)
 
 	vehiclesMove()
 
