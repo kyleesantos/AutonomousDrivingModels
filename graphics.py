@@ -14,7 +14,15 @@ MARGIN = 60
 
 outR = (CANVAS_WIDTH + TRACK_WIDTH - 2 * MARGIN) // 4
 vehR = outR - (TRACK_WIDTH // 2)
+
+trackLeftX = MARGIN + outR
+trackRightX = CANVAS_WIDTH - MARGIN - outR
+trackY = CANVAS_HEIGHT // 2
+
 canvas = tk.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
+# x, y = 0, 0
+# canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT - MARGIN,
+# 		text = str(x) + ', ' + str(y))
 move = False
 canvas.pack()
 
@@ -22,14 +30,45 @@ vehicles = []
 
 def keyPress(event):
 	global move
-	move = not move
+	if (event.char == "s"):
+		move = not move
+
+def mousePress(event):
+	# global x, y
+	x, y = event.x, event.y
+	r, direc = inTrack(x, y)
+	if (r != None):
+		theta = placeOnTrack(x, y, direc, r)
+		makeVehicle(theta, direc)
+	# canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT - MARGIN,
+	# 	text = str(event.x) + ', ' + str(event.y))
+
+def inTrack(x, y):
+	# checks left track circle first
+	r = math.sqrt((trackLeftX - x)**2 + (trackY - y)**2)
+	if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.LEFT)
+	# then right track
+	r = math.sqrt((trackRightX - x)**2 + (trackY - y)**2)
+	if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.RIGHT)
+	return (None, None)
+
+def placeOnTrack(x, y, direc, r):
+	if (direc == vehicle.LEFT): x -= trackLeftX
+	else: x -= trackRightX
+	y -= trackY
+	a = math.acos(float(x / r))
+	if (y > 0): a *= -1.0
+	return a
 
 def flatten(l):
 	return [item for tup in l for item in tup]
 
-def makeVehicle(x, y, r, theta):
+def makeVehicle(theta, direc):
 	# Add Vehicle
-	veh = Vehicle(x, y, r, theta)
+	if (direc == vehicle.LEFT):
+		veh = Vehicle(trackLeftX, trackY, vehR, theta, direc)
+	else:
+		veh = Vehicle(trackRightX, trackY, vehR, theta, direc)
 	vehCanvas = canvas.create_polygon(veh.getVehPoints(), fill='red')
 	wheelsCanvas = []
 	for wP in veh.getWheelPoints():
@@ -41,7 +80,7 @@ def makeVehicle(x, y, r, theta):
 def vehiclesMove():
 	if move:
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
-			v.turnLeft()
+			v.turn()
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
 				w = wheelsCanvas[i]
@@ -58,22 +97,21 @@ def drawTrack(x, y, outR, inR):
 		fill = 'white', outline = "")
 
 
+
 if __name__ == "__main__":
 	canvas.create_text(CANVAS_WIDTH/2, MARGIN,
 		text='Cooperative vs Non-Cooperative Autonomous Driving')
 
 	# Add Track
-	trackLeftX = MARGIN + outR
-	trackLeftY = CANVAS_HEIGHT // 2
-	trackRightX = CANVAS_WIDTH - MARGIN - outR
-	drawTrack(trackLeftX, trackLeftY, outR, outR - TRACK_WIDTH)
-	drawTrack(trackRightX, trackLeftY, outR, outR - TRACK_WIDTH)
+	drawTrack(trackLeftX, trackY, outR, outR - TRACK_WIDTH)
+	drawTrack(trackRightX, trackY, outR, outR - TRACK_WIDTH)
 
-	makeVehicle(trackLeftX, trackLeftY, vehR, 0)
-	makeVehicle(trackLeftX, trackLeftY, vehR, math.pi / 2)
-	makeVehicle(trackRightX, trackLeftY, vehR, 0)
+	# makeVehicle(0, vehicle.LEFT)
+	# makeVehicle(math.pi / 2, vehicle.LEFT)
+	# makeVehicle(math.pi / 2, vehicle.RIGHT)
 
 	vehiclesMove()
 
 	root.bind("<Key>", keyPress)
+	root.bind("<Button-1>", mousePress)
 	root.mainloop()
