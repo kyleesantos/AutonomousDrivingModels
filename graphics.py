@@ -1,9 +1,11 @@
 from track import Track
 from vehicle import Vehicle
+from cooperativePlanning import Coop_Env
 from tkinter import *
 import vehicle
 import tkinter as tk
 import itertools, math, time
+import numpy as np
 
 root = tk.Tk()
 
@@ -32,6 +34,10 @@ move = False
 vehicles = []
 tempSpace = 20
 
+coop_env = Coop_Env()
+coop_env.setIntersection((601, 397))
+coop_env.setIntersectionThreshold(194)
+coop_env.setWeights(np.array([1,1]))
 
 def keyPress(event):
 	global move, counter
@@ -100,8 +106,10 @@ def makeVehicle(theta, direc):
 def vehiclesMove():
 	global infoText, counter, kylee
 	if move:
+		cars = [vehicle[0] for vehicle in vehicles]
+		coop_env.step(cars)
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
-			v.turn()
+			#v.turn()
 			# info = infoText[v.getID()]
 			# theta = "{0:.2f}".format(round(v.getTheta(), 2))
 			# info.configure(text = "{}. speed = {}, theta = {} \n".format(v.getID(), v.getAngSpeed(), theta))

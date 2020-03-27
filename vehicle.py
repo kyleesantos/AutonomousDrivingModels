@@ -20,6 +20,7 @@ class Vehicle:
     vehY = self.trackY
     self.direc = turn
     self.id = idNum
+    self.pending = False
     self.createVehicle(vehX, vehY)
 
 
@@ -53,8 +54,8 @@ class Vehicle:
         (self.wheelPoints[i], self.wheelRadii[i]))
 
     # triangle direction marker
-    if (self.direc == LEFT): self.dirPoints = [(vehX, vehY - VEH_LENGTH//3)]
-    else: self.dirPoints = [(vehX, vehY + VEH_LENGTH//3)]
+    if (self.direc == LEFT):  self.dirPoints = [(vehX, vehY + VEH_LENGTH//3)]
+    else: self.dirPoints = [(vehX, vehY - VEH_LENGTH//3)]
     self.dirPoints.extend([(vehX - VEH_WIDTH //2, vehY),
                       (vehX + VEH_WIDTH //2, vehY)])
     self.dirRadii = self.getRadii(self.dirPoints)
@@ -117,8 +118,8 @@ class Vehicle:
   def turnCar(self):
     newPoints = []
     for i in range(len(self.vehRadii)):
-        if (self.direc == LEFT): self.vehAngles[i] += self.angSpeed
-        else: self.vehAngles[i] -= self.angSpeed
+        if (self.direc == LEFT): self.vehAngles[i] -= self.angSpeed
+        else: self.vehAngles[i] += self.angSpeed
         newPoints.append(self.xyCoord(self.vehRadii[i], self.vehAngles[i]))
     self.vehPoints = newPoints
 
@@ -128,8 +129,8 @@ class Vehicle:
     for i in range(len(self.wheelPoints)):
         indWheel = []
         for j in range(len(self.wheelPoints)):
-          if (self.direc == LEFT): self.wheelAngles[i][j] += self.angSpeed
-          else: self.wheelAngles[i][j] -= self.angSpeed
+          if (self.direc == LEFT): self.wheelAngles[i][j] -= self.angSpeed
+          else: self.wheelAngles[i][j] += self.angSpeed
           indWheel.append(self.xyCoord
             (self.wheelRadii[i][j], self.wheelAngles[i][j]))
         newWheels.append(indWheel)
@@ -139,8 +140,8 @@ class Vehicle:
   def turnDirection(self):
     newDir = []
     for i in range(len(self.dirRadii)):
-        if (self.direc == LEFT): self.dirAngles[i] += self.angSpeed
-        else: self.dirAngles[i] -= self.angSpeed
+        if (self.direc == LEFT): self.dirAngles[i] -= self.angSpeed
+        else: self.dirAngles[i] += self.angSpeed
         newDir.append(self.xyCoord(self.dirRadii[i], self.dirAngles[i]))
     self.dirPoints = newDir
 
@@ -152,14 +153,27 @@ class Vehicle:
     self.turnWheels()
     self.turnDirection()
 
-    self.theta = (self.theta +
+    if (self.direc == 0):
+      self.theta = (self.theta +
+        (2 * math.pi * (-self.angSpeed / 360.0))) % (2 * math.pi)
+    else:
+      self.theta = (self.theta +
         (2 * math.pi * (self.angSpeed / 360.0))) % (2 * math.pi)
 
   def getID(self):
     return self.id
 
+  def getRadius(self):
+    return self.r
+
   def getTheta(self):
     return self.theta
+
+  def isPending(self):
+    return self.pending
+
+  def setPending(self, pending=True):
+    self.pending = pending
 
   def getDirection(self):
     return self.direc
@@ -180,6 +194,12 @@ class Vehicle:
   def getVehPoints(self):
     return self.vehPoints
 
+  # returns center point of vehicle
+  def getPos(self):
+    vehPoints = self.getVehPoints()
+    sumx = sum([pos[0] for pos in vehPoints])
+    sumy = sum([pos[1] for pos in vehPoints])
+    return (sumx/len(vehPoints), sumy/len(vehPoints))
   def getWheelPoints(self):
     return self.wheelPoints
 
