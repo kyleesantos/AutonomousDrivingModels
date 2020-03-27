@@ -1,47 +1,60 @@
 from track import Track
 from vehicle import Vehicle
+from tkinter import *
 import vehicle
 import tkinter as tk
-import itertools, math
+import itertools, math, time
 
 root = tk.Tk()
-TK_SILENCE_DEPRECATION=1
 
 CANVAS_WIDTH = 1200
 CANVAS_HEIGHT = 800
-TRACK_WIDTH = vehicle.VEH_WIDTH * 4
-MARGIN = 60
+TRACK_WIDTH = vehicle.VEH_WIDTH * 4 # 120
+MARGIN = 100
 
-outR = (CANVAS_WIDTH + TRACK_WIDTH - 2 * MARGIN) // 4
-vehR = outR - (TRACK_WIDTH // 2)
-
+#size of track
+outR = (CANVAS_WIDTH + TRACK_WIDTH - 2 * MARGIN) // 4 # 280
+vehR = outR - (TRACK_WIDTH // 2) # 220
+# left center track (380, 400)
 trackLeftX = MARGIN + outR
 trackRightX = CANVAS_WIDTH - MARGIN - outR
+# right center track (820, 400)
 trackY = CANVAS_HEIGHT // 2
 
 canvas = tk.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
-# x, y = 0, 0
-# canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT - MARGIN,
-# 		text = str(x) + ', ' + str(y))
-move = False
 canvas.pack()
 
+counter = 0
+timerLabel = Label(text = "0")
+infoText = []
+move = False
+# array of veh object, veh canvas, wheels canvas, triangle canvas
 vehicles = []
+tempSpace = 20
+
 
 def keyPress(event):
-	global move
+	global move, counter
 	if (event.char == "s"):
+		counter = time.time()
 		move = not move
+	if (event.char == "r"):
+		counter = time.time()
+		timerLabel.config(text = "0.0 s")
+	if (event.char == "1"):
+		for v, q, w, e in vehicles:
+			v.increaseAngSpeed(1)
+	if (event.char == "2"):
+		for v, q, w, e in vehicles:
+			v.decreaseAngSpeed(1)
 
 def mousePress(event):
-	# global x, y
+	global kylee
 	x, y = event.x, event.y
 	r, direc = inTrack(x, y)
 	if (r != None):
 		theta = placeOnTrack(x, y, direc, r)
 		makeVehicle(theta, direc)
-	# canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT - MARGIN,
-	# 	text = str(event.x) + ', ' + str(event.y))
 
 def inTrack(x, y):
 	# checks left track circle first
@@ -57,18 +70,25 @@ def placeOnTrack(x, y, direc, r):
 	else: x -= trackRightX
 	y -= trackY
 	a = math.acos(float(x / r))
-	if (y > 0): a *= -1.0
+	if (y > 0): a = (a * -1.0) % (2 * math.pi)
 	return a
 
 def flatten(l):
 	return [item for tup in l for item in tup]
 
 def makeVehicle(theta, direc):
+	global infoText
 	# Add Vehicle
 	if (direc == vehicle.LEFT):
-		veh = Vehicle(trackLeftX, trackY, vehR, theta, direc)
+		veh = Vehicle(trackLeftX, trackY, vehR, theta, direc, len(vehicles))
 	else:
-		veh = Vehicle(trackRightX, trackY, vehR, theta, direc)
+		veh = Vehicle(trackRightX, trackY, vehR, theta, direc, len(vehicles))
+	theta = "{0:.2f}".format(round(veh.getTheta(), 2))
+	info = Label(text = "{}. speed = {}, theta = {} \n".format(veh.getID(),
+		veh.getAngSpeed(), theta))
+	info.place(x = CANVAS_WIDTH // 2,
+		y = CANVAS_HEIGHT - MARGIN + veh.getID() * tempSpace)
+	infoText.append(info)
 	vehCanvas = canvas.create_polygon(veh.getVehPoints(), fill='red')
 	wheelsCanvas = []
 	for wP in veh.getWheelPoints():
@@ -78,20 +98,25 @@ def makeVehicle(theta, direc):
 
 
 def vehiclesMove():
+	global infoText, counter, kylee
 	if move:
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
 			v.turn()
+			# info = infoText[v.getID()]
+			# theta = "{0:.2f}".format(round(v.getTheta(), 2))
+			# info.configure(text = "{}. speed = {}, theta = {} \n".format(v.getID(), v.getAngSpeed(), theta))
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
 				w = wheelsCanvas[i]
 				wP = v.getWheelPoints()[i]
 				canvas.coords(w, *flatten(wP))
 			canvas.coords(dirCanvas, *flatten(v.getDirPoints()))
-	root.after(1, vehiclesMove)
+		timerLabel.config(text = "{0:.1f} s".format(round(time.time() - counter, 1)))
+	root.after(10, vehiclesMove)
 
 
 def drawTrack(x, y, outR, inR):
-	canvas.create_oval(x - outR, y - outR, x + outR, y + outR, 
+	canvas.create_oval(x - outR, y - outR, x + outR, y + outR,
 		fill = 'darkGreen', outline = "")
 	canvas.create_oval(x - inR, y - inR, x + inR, y + inR,
 		fill = 'white', outline = "")
@@ -99,16 +124,14 @@ def drawTrack(x, y, outR, inR):
 
 
 if __name__ == "__main__":
-	canvas.create_text(CANVAS_WIDTH/2, MARGIN,
+	# Add title and car information at top and bottom of screen
+	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 3,
 		text='Cooperative vs Non-Cooperative Autonomous Driving')
+	timerLabel.place(x = CANVAS_WIDTH/2, y = MARGIN // 3 * 2)
 
 	# Add Track
 	drawTrack(trackLeftX, trackY, outR, outR - TRACK_WIDTH)
 	drawTrack(trackRightX, trackY, outR, outR - TRACK_WIDTH)
-
-	# makeVehicle(0, vehicle.LEFT)
-	# makeVehicle(math.pi / 2, vehicle.LEFT)
-	# makeVehicle(math.pi / 2, vehicle.RIGHT)
 
 	vehiclesMove()
 

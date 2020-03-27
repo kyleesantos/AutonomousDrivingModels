@@ -1,7 +1,7 @@
 import math
-
 from vehicle import Vehicle
 
+SCALE = 25 # pixels/m
 
 # Intelligent Driver Model Parameters
 OPT_VELOCITY = 0.4  # m/s
@@ -24,14 +24,13 @@ def calculate_accel(dist, v, delta_v):
 
 # returns true if vehicle2 is within the information constraint
 def is_detectable(vehicle1, vehicle2):
-  return (vehicle1 != vehicle2) and
+  return ((vehicle1 != vehicle2) and
           (math.pow(vehicle1.x - vehicle2.x, 2) +
-            math.pow(vehicle1.y - vehicle2.y, 2) <= math.pow(DETECTION_DIST, 2))
-
+            math.pow(vehicle1.y - vehicle2.y, 2) <= math.pow(DETECTION_DIST, 2)))
 
 def is_on_path(vehicle1, vehicle2):
-  return (vehicle1.trackX == vehicle2.trackX) and
-          (vehicle1.trackY == vehicle2.trackY)
+  return ((vehicle1.trackX == vehicle2.trackX) and
+          (vehicle1.trackY == vehicle2.trackY))
 
 
 def find_nearest_on_path(vehicle, vehicles):
@@ -68,4 +67,4 @@ def update_accels(vehicles):
   # for accel,vehicle in zip(new_accels,vehicles):
   #   vehicle.accel = accel
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
