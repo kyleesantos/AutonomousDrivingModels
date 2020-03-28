@@ -41,10 +41,10 @@ class Coop_Env():
 
 		assert (car1.getDirection() == car2.getDirection()), "calling arc distance with cars from different sides"
 		if (car1.getDirection() == 1):
-			if (angle2 < angle1): arcAngle = (2*math.pi + angle2) - angle1
+			if (angle2 < angle1): arcAngle = (2*math.pi) - (angle1 - angle2)
 			else: arcAngle = angle2 - angle1
 		else:
-			if (angle1 < angle2): arcAngle = angle2 + angle1
+			if (angle1 < angle2): arcAngle = (2*math.pi) - (angle2 - angle1)
 			else: arcAngle = angle1 - angle2
 
 		return (arcAngle/(2*math.pi)) * circumference
@@ -54,7 +54,10 @@ class Coop_Env():
 		for vehicle in vehicles:
 			if (vehicle == self.passingVehicle): continue
 			if self.nearIntersection(vehicle): result.append(vehicle)
-		return result
+
+		result.sort(key=lambda vehicle: self.getDistanceToIntersection(vehicle))
+
+		return result[:2]
 
 	# chooses a vehicle to pass through the intersection based on 
 	# weighted features of the environment state
@@ -101,11 +104,12 @@ class Coop_Env():
 
 			if (i == 0): precedingVehicle = orderedVehicles[len(orderedVehicles)-1]
 			else: precedingVehicle = orderedVehicles[i-1]
-
+			
 			if (self.nearIntersection(vehicle) and (self.passingVehicle != vehicle)): continue
 
 			arcDistance = self.getArcDistance(vehicle, precedingVehicle)
 			if ((arcDistance >= self.bufferDistance) or (len(orderedVehicles) == 1)):
+
 				vehicle.turn()
 
 				# check if vehicle just passed the intersection
@@ -132,7 +136,6 @@ class Coop_Env():
 	# returns vehicle objects each updated with its next position
 	def step(self, vehicles):
 		vehiclesAtIntersection = self.getVehiclesAtIntersection(vehicles)
-
 
 		# set vehicles at intersection to pending state/update pending counters
 		for vehicle in vehiclesAtIntersection:
