@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from vehicle import LEFT, RIGHT
 
 class Coop_Env():
 	# Coop_Env houses stats/data on the current state of the cooperative environment
@@ -68,8 +69,8 @@ class Coop_Env():
 	# returns lists of ordered vehicles, one for each side. 
 	# an order of vehicles starts from one vehicle (in one of the circles/loops) and continues backwards
 	def getOrderedVehiclesPerSide(self, vehicles):
-		left = [vehicle for vehicle in vehicles if (vehicle.getDirection() == 0)]
-		right = [vehicle for vehicle in vehicles if (vehicle.getDirection() == 1)]
+		left = [vehicle for vehicle in vehicles if (vehicle.getDirection() == LEFT)]
+		right = [vehicle for vehicle in vehicles if (vehicle.getDirection() == RIGHT)]
 
 		
 		if (len(left) > 0):
@@ -91,7 +92,7 @@ class Coop_Env():
 		return math.sqrt((intersectionX - posX)**2 + (intersectionY - posY)**2)
 
 	def updatePendingCount(self, vehicle, dx):
-		if (vehicle.getDirection() == 0): self.pendingLeft += dx
+		if (vehicle.getDirection() == LEFT): self.pendingLeft += dx
 		else: self.pendingRight += dx
 
 	# updates the positions of the ordered list of vehicles
@@ -106,7 +107,7 @@ class Coop_Env():
 
 			arcDistance = self.getArcDistance(vehicle, precedingVehicle)
 			if ((arcDistance >= self.bufferDistance) or (len(orderedVehicles) == 1)):
-				vehicle.turn()
+				vehicle.update()
 
 				# check if vehicle just passed the intersection
 				if (vehicle == self.passingVehicle):
@@ -125,7 +126,7 @@ class Coop_Env():
 	# returns a feature vector from the given vehicle to use in 
 	# determining the vehicle to pass through intersection
 	def getFeatureVector(self, vehicle):
-		if (vehicle.getDirection() == 0): pendingCount = self.pendingLeft
+		if (vehicle.getDirection() == LEFT): pendingCount = self.pendingLeft
 		else: pendingCount = self.pendingRight 
 		return np.array([1/self.getDistanceToIntersection(vehicle), pendingCount])
 
@@ -138,7 +139,7 @@ class Coop_Env():
 		for vehicle in vehiclesAtIntersection:
 			if (vehicle.isPending() or (self.passingVehicle == vehicle)): continue
 			vehicle.setPending()
-			if (vehicle.getDirection() == 0): self.pendingLeft += 1
+			if (vehicle.getDirection() == LEFT): self.pendingLeft += 1
 			else: self.pendingRight += 1
 
 		# if no vehicle is passing through intersection, choose next vehicle to pass through
@@ -149,7 +150,7 @@ class Coop_Env():
 			# vehicle is no longer pending and is now going to pass through intersection
 			if (not selectedVehicle is None): 
 				selectedVehicle.setPending(pending=False)
-				if (selectedVehicle.getDirection() == 0): self.pendingLeft -= 1
+				if (selectedVehicle.getDirection() == LEFT): self.pendingLeft -= 1
 				else: self.pendingRight -= 1
 				self.passingVehicle = selectedVehicle
 

@@ -1,18 +1,26 @@
 import math
-from vehicle import Vehicle
+from vehicle import *
 
 SCALE = 25 # pixels/m
 
 # Intelligent Driver Model Parameters
-OPT_VELOCITY = 0.4  # m/s
+REAL_OPT_VELOCITY = 0.4  # m/s
+REAL_MAX_ACCEL = 0.5     # m/s2
+REAL_OPT_DECEL = 0.3     # m/s2
+REAL_BUFFER_DIST = 0.1   # m
+REAL_DETECTION_DIST = 3  # m
+
+OPT_VELOCITY = SCALE * REAL_OPT_VELOCITY  # pixels/s
+MAX_ACCEL = SCALE * REAL_MAX_ACCEL        # pixels/s2
+OPT_DECEL = SCALE * REAL_OPT_DECEL        # pixels/s2
+BUFFER_DIST = SCALE * REAL_BUFFER_DIST    # pixels
+
 TIME_HEADWAY = 2    # s
-MAX_ACCEL = 0.5     # m/s2
-OPT_DECEL = 0.3     # m/s2
-BUFFER_DIST = 0.1   # m
 ACCEL_EXP = 4
 
 # Information Constraints Parameters
-DETECTION_DIST = 3  # m
+DETECTION_DIST = SCALE * REAL_DETECTION_DIST  # m
+
 
 def calculate_accel(dist, v, delta_v):
   a = math.pow((v/delta_v), ACCEL_EXP)
@@ -42,10 +50,10 @@ def find_nearest_on_path(vehicle, vehicles):
 
 
 def find_closest_vehicle_ahead(vehicle, vehicles):
-  closest_diff = 2*math.pi()
+  closest_diff = 2*math.pi
   closest_vehicle = None
   for vehicle2 in vehicles:
-    diff = vehicle2.theta - vehicle.theta if vehicle2.theta > vehicle.theta else vehicle2.theta + 2*math.pi() - vehicle.theta
+    diff = vehicle2.theta - vehicle.theta if vehicle2.theta > vehicle.theta else vehicle2.theta + 2*math.pi - vehicle.theta
     if diff < closest_diff:
       closest_diff = diff
       closest_vehicle = vehicle2

@@ -55,7 +55,6 @@ def keyPress(event):
 			v.decreaseAngSpeed(1)
 
 def mousePress(event):
-	global kylee
 	x, y = event.x, event.y
 	r, direc = inTrack(x, y)
 	if (r != None):
