@@ -168,6 +168,12 @@ class Vehicle:
 
   def getTheta(self):
     return self.theta
+  
+  def getX(self):
+    return self.trackX + math.cos(self.theta) * self.r
+  
+  def getY(self):
+    return self.trackY - math.sin(self.theta) * self.r
 
   def isPending(self):
     return self.pending
@@ -203,8 +209,9 @@ class Vehicle:
   def getAcceleration(self):
     return self.acceleration
 
+  # takes in acceleration as linear
   def setAcceleration(self, acceleration):
-    self.acceleration = acceleration
+    self.acceleration = toAngular(acceleration, self.r)
 
   def increaseAngSpeed(self, amount):
     if (self.direc == LEFT):

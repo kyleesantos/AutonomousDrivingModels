@@ -1,11 +1,12 @@
-from track import Track
-from vehicle import Vehicle
-from cooperativePlanning import Coop_Env
-from tkinter import *
-import vehicle
 import tkinter as tk
 import itertools, math, time
 import numpy as np
+
+from cooperativePlanning import Coop_Env
+from tkinter import *
+import vehicle
+import idm
+
 
 root = tk.Tk()
 
@@ -85,9 +86,9 @@ def makeVehicle(theta, direc):
 	global infoText
 	# Add Vehicle
 	if (direc == vehicle.LEFT):
-		veh = Vehicle(trackLeftX, trackY, vehR, theta, direc, len(vehicles))
+		veh = vehicle.Vehicle(trackLeftX, trackY, vehR, theta, direc, len(vehicles))
 	else:
-		veh = Vehicle(trackRightX, trackY, vehR, theta, direc, len(vehicles))
+		veh = vehicle.Vehicle(trackRightX, trackY, vehR, theta, direc, len(vehicles))
 	theta = "{0:.2f}".format(round(veh.getTheta(), 2))
 	info = Label(text = "{}. speed = {}, theta = {} \n".format(veh.getID(),
 		veh.getAngSpeed(), theta))
@@ -103,15 +104,16 @@ def makeVehicle(theta, direc):
 
 
 def vehiclesMove():
-	global infoText, counter, kylee
+	global infoText, counter
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
-		coop_env.step(cars)
+		idm.updateAccels(cars)
+		# coop_env.step(cars)
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
-			#v.turn()
-			# info = infoText[v.getID()]
-			# theta = "{0:.2f}".format(round(v.getTheta(), 2))
-			# info.configure(text = "{}. speed = {}, theta = {} \n".format(v.getID(), v.getAngSpeed(), theta))
+			v.update()
+			info = infoText[v.getID()]
+			theta = "{0:.2f}".format(round(v.getTheta(), 2))
+			info.configure(text = "{}. speed = {}, theta = {} \n".format(v.getID(), v.getAngSpeed(), theta))
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
 				w = wheelsCanvas[i]
