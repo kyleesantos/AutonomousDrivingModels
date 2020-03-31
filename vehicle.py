@@ -186,6 +186,9 @@ class Vehicle:
 
   def getAngSpeed(self):
     return self.angSpeed
+  
+  def setAngSpeed(self, speed):
+    self.angSpeed = speed
 
   def getVehPoints(self):
     return self.vehPoints

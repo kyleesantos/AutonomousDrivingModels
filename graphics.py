@@ -130,10 +130,10 @@ def vehiclesMove():
 	global counter, info
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
-		# idm.updateAccels(cars)
-		coop_env.step(cars)
+		idm.updateAccels(cars)
+		# coop_env.step(cars)
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
-			# v.update()
+			v.update()
 			info.configure(text = infoListToText())
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
