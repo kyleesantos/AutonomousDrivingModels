@@ -2,21 +2,26 @@ import math, time
 import idm
 from util import *
 
-LEFT = -1
-RIGHT = 1
+LEFT = 1
+RIGHT = -1
+OUTER = 1
+INNER = -1
 VEH_WIDTH = 25 # half of vehicle width
 VEH_LENGTH = 50 # half of vehicle height
+WHE_WIDTH = 5 # half of wheel width
+WHE_LENGTH = 15 # half of wheel length
+
 
 class Vehicle:
 
   # Use (x,y) of center of the vehicle's bounding box
   # angle in radians
   def __init__(self, trackX, trackY, r, theta, direc, idNum):
-    self.angSpeed = -1 if direc == LEFT else RIGHT     # deg/s
+    self.angSpeed = direc  # deg/s
     self.trackX = trackX
     self.trackY = trackY
     self.r = r
-    self.theta = theta
+    self.theta = theta # degrees
     vehX = r + self.trackX
     vehY = self.trackY
     self.direc = direc
@@ -33,14 +38,13 @@ class Vehicle:
                         (vehX + VEH_WIDTH, vehY + VEH_LENGTH),
                         (vehX + VEH_WIDTH, vehY - VEH_LENGTH)]
 
-    carWheels = (-5, -15, 5, 15)
     self.wheelPoints = []
     for x, y in self.vehPoints:
       wheel = []
-      wheel.append((x + carWheels[0], y + carWheels[1]))
-      wheel.append((x + carWheels[0], y + carWheels[3]))
-      wheel.append((x + carWheels[2], y + carWheels[3]))
-      wheel.append((x + carWheels[2], y + carWheels[1]))
+      wheel.append((x - WHE_WIDTH, y - WHE_LENGTH))
+      wheel.append((x - WHE_WIDTH, y + WHE_LENGTH))
+      wheel.append((x + WHE_WIDTH, y + WHE_LENGTH))
+      wheel.append((x + WHE_WIDTH, y - WHE_LENGTH))
       self.wheelPoints.append(wheel)
 
     self.vehRadii = self._getRadii(self.vehPoints)
@@ -66,7 +70,7 @@ class Vehicle:
   def _initialTurn(self):
     newPoints = []
     for i in range(len(self.vehRadii)):
-      self.vehAngles[i] += toDegrees(self.theta)
+      self.vehAngles[i] += self.theta
       newPoints.append(self._xyCoord(self.vehRadii[i], self.vehAngles[i]))
     self.vehPoints = newPoints
 
@@ -74,14 +78,14 @@ class Vehicle:
     for i in range(len(self.wheelPoints)):
       indWheel = []
       for j in range(len(self.wheelPoints)):
-        self.wheelAngles[i][j] += toDegrees(self.theta)
+        self.wheelAngles[i][j] += self.theta
         indWheel.append(self._xyCoord(self.wheelRadii[i][j], self.wheelAngles[i][j]))
       newWheels.append(indWheel)
     self.wheelPoints = newWheels
 
     newDir = []
     for i in range(len(self.dirRadii)):
-      self.dirAngles[i] += toDegrees(self.theta)
+      self.dirAngles[i] += self.theta
       newDir.append(self._xyCoord(self.dirRadii[i], self.dirAngles[i]))
     self.dirPoints = newDir
 
@@ -141,20 +145,16 @@ class Vehicle:
     self.dirPoints = newDir
 
   def _updateAngSpeed(self):
-    if (self.direc == LEFT):
-      self.angSpeed = max(min(self.angSpeed + self.acceleration, 0), self.optAngSpeed)
-    else:
-      self.angSpeed = min(max(self.angSpeed + self.acceleration, 0), self.optAngSpeed)
-    
+    newSpeed = min(max(abs(self.angSpeed) + self.acceleration, 0), abs(self.optAngSpeed))
+    self.angSpeed = self.direc * newSpeed
     if (self.angSpeed == self.optAngSpeed):
-      self.optAngSpeed = 0
+      self.acceleration = 0
 
   def _turn(self):
     self._turnCar()
     self._turnWheels()
     self._turnDirection()
-
-    self.theta = self.theta + toRadians(self.angSpeed) % (2 * math.pi)
+    self.theta = (self.theta + self.angSpeed) % 360
 
   def update(self):
     self._updateAngSpeed()
@@ -168,12 +168,12 @@ class Vehicle:
 
   def getTheta(self):
     return self.theta
-  
+
   def getX(self):
-    return self.trackX + math.cos(self.theta) * self.r
-  
+    return self.trackX + math.cos(toRadians(self.theta)) * self.r
+
   def getY(self):
-    return self.trackY - math.sin(self.theta) * self.r
+    return self.trackY - math.sin(toRadians(self.theta)) * self.r
 
   def isPending(self):
     return self.pending
@@ -183,9 +183,6 @@ class Vehicle:
 
   def getDirection(self):
     return self.direc
-
-  def setAngSpeed(self, speed):
-    self.angSpeed = speed
 
   def getAngSpeed(self):
     return self.angSpeed
@@ -206,6 +203,12 @@ class Vehicle:
   def getDirPoints(self):
     return self.dirPoints
 
+  def getAngleBounds(self):
+    return [self.wheelAngles[0][0], self.wheelAngles[1][1]]
+
+  def getTrack(self):
+    return (self.trackX, self.trackY)
+
   def getAcceleration(self):
     return self.acceleration
 
@@ -214,15 +217,9 @@ class Vehicle:
     self.acceleration = toAngular(acceleration, self.r)
 
   def increaseAngSpeed(self, amount):
-    if (self.direc == LEFT):
-      self.angSpeed = max(min(self.angSpeed - amount, 0), self.optAngSpeed)
-    else:
-      self.angSpeed = min(max(self.angSpeed + amount, 0), self.optAngSpeed)
-    
-    print(self.angSpeed)
+    newSpeed = min(max(abs(self.angSpeed) + amount, 0), abs(self.optAngSpeed))
+    self.angSpeed = self.direc * newSpeed
 
   def decreaseAngSpeed(self, amount):
-    if (self.direc == LEFT):
-      self.angSpeed = max(min(self.angSpeed + amount, 0), self.optAngSpeed)
-    else:
-      self.angSpeed = min(max(self.angSpeed - amount, 0), self.optAngSpeed)
+    newSpeed = min(max(abs(self.angSpeed) - amount, 0), abs(self.optAngSpeed))
+    self.angSpeed = self.direc * newSpeed

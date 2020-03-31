@@ -12,7 +12,7 @@ class Coop_Env():
 		self.pendingLeft = 0 # number of vehicles pending from left side
 		self.pendingRight = 0 # number of vehicles pending from right side
 		self.passingVehicle = None # vehicle currently passing through intersection
-		self.numLeft = 0 # number of cars on the left side 
+		self.numLeft = 0 # number of cars on the left side
 		self.numRight = 0 # number of cars on the right side
 		self.weights = None
 		self.bufferDistance = 150 # buffer distance between any two cars (should be set appropriately)
@@ -38,17 +38,17 @@ class Coop_Env():
 
 		angle1 = car1.getTheta()
 		angle2 = car2.getTheta()
-		circumference = 2 * math.pi * car1.getRadius()
+		circumference = 360 * car1.getRadius()
 
 		assert (car1.getDirection() == car2.getDirection()), "calling arc distance with cars from different sides"
 		if (car1.getDirection() == 1):
-			if (angle2 < angle1): arcAngle = (2*math.pi + angle2) - angle1
+			if (angle2 < angle1): arcAngle = (360 + angle2) - angle1
 			else: arcAngle = angle2 - angle1
 		else:
 			if (angle1 < angle2): arcAngle = angle2 + angle1
 			else: arcAngle = angle1 - angle2
 
-		return (arcAngle/(2*math.pi)) * circumference
+		return (arcAngle/(360)) * circumference
 
 	def getVehiclesAtIntersection(self, vehicles):
 		result = []
@@ -57,7 +57,7 @@ class Coop_Env():
 			if self.nearIntersection(vehicle): result.append(vehicle)
 		return result
 
-	# chooses a vehicle to pass through the intersection based on 
+	# chooses a vehicle to pass through the intersection based on
 	# weighted features of the environment state
 	def selectVehicle(self, vehiclesAtIntersection):
 		if len(vehiclesAtIntersection) == 0: return None
@@ -66,13 +66,13 @@ class Coop_Env():
 		sortedVehicles = sorted(vehiclesAtIntersection, key=lambda vehicle: np.dot(self.weights, self.getFeatureVector(vehicle)), reverse=True)
 		return sortedVehicles[0]
 
-	# returns lists of ordered vehicles, one for each side. 
+	# returns lists of ordered vehicles, one for each side.
 	# an order of vehicles starts from one vehicle (in one of the circles/loops) and continues backwards
 	def getOrderedVehiclesPerSide(self, vehicles):
 		left = [vehicle for vehicle in vehicles if (vehicle.getDirection() == LEFT)]
 		right = [vehicle for vehicle in vehicles if (vehicle.getDirection() == RIGHT)]
 
-		
+
 		if (len(left) > 0):
 			leftReference = left[0] # reference vehicle to determine order. reference vehicle will be first vehicle of the order
 			left.sort(key=lambda vehicle: self.getArcDistance(vehicle, leftReference))
@@ -80,11 +80,11 @@ class Coop_Env():
 		if (len(right) > 0):
 			rightReference = right[0] # reference vehicle to determine order. reference vehicle will be first vehicle of the order
 			right.sort(key=lambda vehicle: self.getArcDistance(vehicle, rightReference))
-		
+
 
 		return left, right
 
-	# gets the euclidean distance of a vehicle to the intersection 
+	# gets the euclidean distance of a vehicle to the intersection
 	def getDistanceToIntersection(self, vehicle):
 		posX, posY = vehicle.getPos()
 		intersectionX, intersectionY = self.intersection
@@ -115,7 +115,7 @@ class Coop_Env():
 					if (posY > self.intersection[1]):
 						self.passingVehicle = None
 
-				if (vehicle.isPending()): 
+				if (vehicle.isPending()):
 					vehicle.setPending(pending=False)
 					self.updatePendingCount(vehicle, -1)
 			else:
@@ -123,11 +123,11 @@ class Coop_Env():
 					vehicle.setPending(pending=True)
 					self.updatePendingCount(vehicle, 1)
 
-	# returns a feature vector from the given vehicle to use in 
+	# returns a feature vector from the given vehicle to use in
 	# determining the vehicle to pass through intersection
 	def getFeatureVector(self, vehicle):
 		if (vehicle.getDirection() == LEFT): pendingCount = self.pendingLeft
-		else: pendingCount = self.pendingRight 
+		else: pendingCount = self.pendingRight
 		return np.array([1/self.getDistanceToIntersection(vehicle), pendingCount])
 
 	# returns vehicle objects each updated with its next position
@@ -148,7 +148,7 @@ class Coop_Env():
 			selectedVehicle = self.selectVehicle(vehiclesAtIntersection)
 
 			# vehicle is no longer pending and is now going to pass through intersection
-			if (not selectedVehicle is None): 
+			if (not selectedVehicle is None):
 				selectedVehicle.setPending(pending=False)
 				if (selectedVehicle.getDirection() == LEFT): self.pendingLeft -= 1
 				else: self.pendingRight -= 1
@@ -159,7 +159,7 @@ class Coop_Env():
 
 		self.updateVehiclePositions(orderedLeft)
 		self.updateVehiclePositions(orderedRight)
-		
+
 
 	# use this to set the center of the intersection point if track_config is figure_8
 	def setIntersection(self, pos):
@@ -170,7 +170,3 @@ class Coop_Env():
 
 	def setIntersectionThreshold(self, value):
 		self.intersectionThreshold = value
-
-
-
-
