@@ -1,11 +1,14 @@
-from track import Track
-from vehicle import Vehicle
-from cooperativePlanningv2 import Coop_Env
-from tkinter import *
-import vehicle
+
 import tkinter as tk
 import itertools, math, time
 import numpy as np
+
+from cooperativePlanning import Coop_Env
+from tkinter import *
+from util import *
+import vehicle
+import idm
+
 
 root = tk.Tk()
 
@@ -13,6 +16,7 @@ CANVAS_WIDTH = 1200
 CANVAS_HEIGHT = 800
 TRACK_WIDTH = vehicle.VEH_WIDTH * 4 # 120
 MARGIN = 100
+TWO_LANE = False
 
 #size of track
 outR = (CANVAS_WIDTH + TRACK_WIDTH - 2 * MARGIN) // 4 # 280
@@ -22,13 +26,17 @@ trackLeftX = MARGIN + outR
 trackRightX = CANVAS_WIDTH - MARGIN - outR
 # right center track (820, 400)
 trackY = CANVAS_HEIGHT // 2
+# center track
+trackX = CANVAS_WIDTH // 2
 
 canvas = tk.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
 canvas.pack()
 
 counter = 0
 timerLabel = Label(text = "0")
-infoText = []
+info = Label(text = "")
+info.place(x = MARGIN // 9, y = MARGIN // 9)
+buttonTrack = []
 move = False
 # array of veh object, veh canvas, wheels canvas, triangle canvas
 vehicles = []
@@ -47,72 +55,87 @@ def keyPress(event):
 	if (event.char == "r"):
 		counter = time.time()
 		timerLabel.config(text = "0.0 s")
+		reset()
 	if (event.char == "1"):
-		for v, q, w, e in vehicles:
+		for v, _, _, _ in vehicles:
 			v.increaseAngSpeed(1)
 	if (event.char == "2"):
-		for v, q, w, e in vehicles:
+		for v, _, _, _ in vehicles:
 			v.decreaseAngSpeed(1)
 
 def mousePress(event):
-	global kylee
 	x, y = event.x, event.y
+	changeTrack(x, y)
 	r, direc = inTrack(x, y)
 	if (r != None):
 		theta = placeOnTrack(x, y, direc, r)
 		makeVehicle(theta, direc)
 
 def inTrack(x, y):
-	# checks left track circle first
-	r = math.sqrt((trackLeftX - x)**2 + (trackY - y)**2)
-	if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.LEFT)
-	# then right track
-	r = math.sqrt((trackRightX - x)**2 + (trackY - y)**2)
-	if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.RIGHT)
+	# Check for overlap
+	dir, tX, tY = vehicle.RIGHT, trackLeftX, trackY
+	if (TWO_LANE): tX = trackX
+	elif (x > CANVAS_WIDTH // 2): dir, tX = vehicle.LEFT, trackRightX
+	for (v, _, _, _) in vehicles:
+		x1 = x - tX
+		y1 = y - tY
+		r = math.sqrt((x1)**2 + (y1)**2)
+		a = toDegrees(math.acos(float(x1 / r)))
+		if (y1 > 0): a = (a * -1.0) % 360
+		checkV = vehicle.Vehicle(tX, tY, vehR, a, dir, -1)
+		if (vehiclesCollide(v, checkV)): return (None, None)
+
+	# Check for 2 lane track first
+	r = math.sqrt((tX - x)**2 + (tY - y)**2)
+	if (TWO_LANE or dir == vehicle.RIGHT):
+		if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.RIGHT)
+	elif (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.LEFT)
 	return (None, None)
 
 def placeOnTrack(x, y, direc, r):
-	if (direc == vehicle.LEFT): x -= trackLeftX
+	if (TWO_LANE): x -= trackX
+	elif (direc == vehicle.RIGHT): x -= trackLeftX
 	else: x -= trackRightX
 	y -= trackY
-	a = math.acos(float(x / r))
-	if (y > 0): a = (a * -1.0) % (2 * math.pi)
+	a = toDegrees(math.acos(float(x / r)))
+	if (y > 0): a = (a * -1.0)
 	return a
 
 def flatten(l):
 	return [item for tup in l for item in tup]
 
 def makeVehicle(theta, direc):
-	global infoText
+	global info
 	# Add Vehicle
-	if (direc == vehicle.LEFT):
-		veh = Vehicle(trackLeftX, trackY, vehR, theta, direc, len(vehicles))
-	else:
-		veh = Vehicle(trackRightX, trackY, vehR, theta, direc, len(vehicles))
-	theta = "{0:.2f}".format(round(veh.getTheta(), 2))
-	info = Label(text = "{}. speed = {}, theta = {} \n".format(veh.getID(),
-		veh.getAngSpeed(), theta))
-	info.place(x = CANVAS_WIDTH // 2,
-		y = CANVAS_HEIGHT - MARGIN + veh.getID() * tempSpace)
-	infoText.append(info)
+	if (TWO_LANE): tX = trackX
+	elif (direc == vehicle.LEFT): tX = trackRightX
+	else: tX = trackLeftX
+
+	veh = vehicle.Vehicle(tX, trackY, vehR, theta, direc, len(vehicles))
 	vehCanvas = canvas.create_polygon(veh.getVehPoints(), fill='red')
 	wheelsCanvas = []
 	for wP in veh.getWheelPoints():
 		wheelsCanvas.append(canvas.create_polygon(wP, fill='black'))
 	dirCanvas = canvas.create_polygon(veh.getDirPoints(), fill = 'yellow')
 	vehicles.append((veh, vehCanvas, wheelsCanvas, dirCanvas))
+	info.configure(text = infoListToText())
 
+def infoListToText():
+	txt = ""
+	for i in range(len(vehicles)):
+		(v, _, _, _) = vehicles[i]
+		txt += "{}. speed = {}\n".format(i, v.getAngSpeed())
+	return txt
 
 def vehiclesMove():
-	global infoText, counter, kylee
+	global counter, info
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
-		coop_env.step(cars)
+		idm.updateAccels(cars)
+		# coop_env.step(cars)
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
-			#v.turn()
-			# info = infoText[v.getID()]
-			# theta = "{0:.2f}".format(round(v.getTheta(), 2))
-			# info.configure(text = "{}. speed = {}, theta = {} \n".format(v.getID(), v.getAngSpeed(), theta))
+			v.update()
+			info.configure(text = infoListToText())
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
 				w = wheelsCanvas[i]
@@ -129,17 +152,58 @@ def drawTrack(x, y, outR, inR):
 	canvas.create_oval(x - inR, y - inR, x + inR, y + inR,
 		fill = 'white', outline = "")
 
+def figure8Track():
+	drawTrack(trackLeftX, trackY, outR, outR - TRACK_WIDTH)
+	drawTrack(trackRightX, trackY, outR, outR - TRACK_WIDTH)
+
+def twoLaneTrack():
+	drawTrack(trackX, trackY, outR + TRACK_WIDTH, outR - TRACK_WIDTH)
+	canvas.create_oval(trackX - outR, trackY - outR, trackX + outR,
+		trackY + outR, dash = (10, 7), outline = "white")
+
+def drawTrackButton():
+	global buttonTrack
+	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN // 4
+	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN // 2
+	canvas.create_rectangle(x1, y1, x2, y2, fill = "grey",
+		outline = "darkGreen")
+	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
+		text = "Change Track", fill = 'darkGreen')
+	buttonTrack = [x1, y1, x2, y2]
+
+def changeTrack(x, y):
+	global buttonTrack, TWO_LANE
+	[x1, y1, x2, y2] = buttonTrack
+	if (x > x1 and x < x2 and y > y1 and y < y2):
+		TWO_LANE = not TWO_LANE
+		reset()
+
+def reset():
+	global vehicles
+	canvas.delete("all")
+	# Add title and car information at top and bottom of screen
+	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 10,
+		text='Cooperative vs Non-Cooperative Autonomous Driving')
+	vehicles = []
+	info.configure(text = "")
+	drawTrackButton()
+	pickTrack()
+
+def pickTrack():
+	if (TWO_LANE):
+		twoLaneTrack()
+	else:
+		figure8Track()
 
 
 if __name__ == "__main__":
-	# Add title and car information at top and bottom of screen
-	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 3,
-		text='Cooperative vs Non-Cooperative Autonomous Driving')
-	timerLabel.place(x = CANVAS_WIDTH/2, y = MARGIN // 3 * 2)
 
-	# Add Track
-	drawTrack(trackLeftX, trackY, outR, outR - TRACK_WIDTH)
-	drawTrack(trackRightX, trackY, outR, outR - TRACK_WIDTH)
+	# timerLabel.place(x = CANVAS_WIDTH/2, y = MARGIN // 3 * 2)
+	reset()
+	drawTrackButton()
+
+	# Pick track
+	pickTrack()
 
 	vehiclesMove()
 
