@@ -21,6 +21,7 @@ class Vehicle:
     self.direc = turn
     self.id = idNum
     self.pending = False
+    self.passingIntersection = False
     self.createVehicle(vehX, vehY)
 
 
@@ -168,6 +169,12 @@ class Vehicle:
 
   def getTheta(self):
     return self.theta
+
+  def isPassingIntersection(self):
+    return self.passingIntersection
+
+  def setPassingIntersection(self, passing=True):
+    self.passingIntersection = passing
 
   def isPending(self):
     return self.pending

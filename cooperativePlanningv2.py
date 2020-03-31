@@ -8,13 +8,20 @@ class Coop_Env():
 		self.track_config = track_config
 		self.intersection = None # should be set by setIntersection if track_config is figure_8
 		self.intersectionThreshold = None # distance from the car to intersection with which a vehicle is considered to be approaching intersection
+		self.nearIntersectionThreshold = 600
 		self.pendingLeft = 0 # number of vehicles pending from left side
 		self.pendingRight = 0 # number of vehicles pending from right side
 		self.passingVehicle = None # vehicle currently passing through intersection
 		self.weights = None
-		self.stop = False
+		self.leftEntranceTheta = 0.785398
+		self.maxPassingCars = 3
+		self.rightEntranceTheta = 2.35619
 		self.vehiclesAtIntersection = None
 		self.bufferDistance = 150 # buffer distance between any two cars (should be set appropriately)
+		self.maxCarSeparation = self.bufferDistance + 5
+		self.decision = None # decision is a list of 'decisions' where a decision is a tuple indicating a side and number of cars to let through
+		self.lastPassingVehicle = None
+		self.vehicles = None
 
 	# returns true if the vehicle is approaching the intersection
 	def nearIntersection(self, vehicle):
@@ -31,15 +38,18 @@ class Coop_Env():
 		return False
 
 	# return value is how far ahead (along circle) that car2 is from car1
-	# should only be called with two cars from the same side/circle
-	def getArcDistance(self, car1, car2):
+	# should only be called with two cars from the same side/circle else
+	# set theta to find distance between car1 and a location on its circle
+	def getArcDistance(self, car1, car2=None, theta=None):
 		if (car1 == car2): return 0
 
 		angle1 = car1.getTheta()
-		angle2 = car2.getTheta()
+		if (theta is None):
+			angle2 = car2.getTheta()
+		else:
+			angle2 = theta
 		circumference = 2 * math.pi * car1.getRadius()
 
-		assert (car1.getDirection() == car2.getDirection()), "calling arc distance with cars from different sides"
 		if (car1.getDirection() == 1):
 			if (angle2 < angle1): arcAngle = (2*math.pi) - (angle1 - angle2)
 			else: arcAngle = angle2 - angle1
@@ -105,33 +115,24 @@ class Coop_Env():
 			if (i == 0): precedingVehicle = orderedVehicles[len(orderedVehicles)-1]
 			else: precedingVehicle = orderedVehicles[i-1]
 			
-			if (self.nearIntersection(vehicle) and (self.passingVehicle != vehicle)): continue
+			if (self.nearIntersection(vehicle) and (not vehicle.isPassingIntersection())): continue
 
 			arcDistance = self.getArcDistance(vehicle, precedingVehicle)
 			if ((arcDistance >= self.bufferDistance) or (len(orderedVehicles) == 1)):
 
-				#vehicle.turn()
+				vehicle.turn()
 
 				# check if vehicle just passed the intersection
-				if (vehicle == self.passingVehicle):
+				if (vehicle.isPassingIntersection()):
 					posY = vehicle.getPos()[1]
 					if (posY > self.intersection[1]):
-						self.passingVehicle = None
-						#print("passing vehicle has passed")
-						#print("at this point, len of vehiclesAtIntersection is ", len(self.vehiclesAtIntersection))
-						#for vehicle in orderedVehicles:
-						#	print("vehicle ", vehicle.getID(), " is at ", vehicle.getPos())
-						#self.stop = True
-
-				if (vehicle.isPending()): 
-					vehicle.setPending(pending=False)
-					self.updatePendingCount(vehicle, -1)
-
-				vehicle.turn()
-			else:
-				if (not vehicle.isPending()):
-					vehicle.setPending(pending=True)
-					self.updatePendingCount(vehicle, 1)
+						vehicle.setPassingIntersection(passing=False)
+						if (self.lastPassingVehicle == vehicle):
+							self.lastPassingVehicle = None
+							self.decision[0] = self.decision[1]
+							self.decision[1] = None
+							if (self.decision[0] is None): self.decision = None
+							else: self.distributeDecision()
 
 	# returns a feature vector from the given vehicle to use in 
 	# determining the vehicle to pass through intersection
@@ -140,30 +141,104 @@ class Coop_Env():
 		else: pendingCount = self.pendingRight 
 		return np.array([1/self.getDistanceToIntersection(vehicle), pendingCount])
 
+	# returns the length of the longest continuous string of cars that are 
+	# each within a certain distance from each other, starting from the first car
+	def getNumCarsInString(self, distances):
+		if len(distances) == 0: return 0
+		count = 1
+		for i in range(1, len(distances)):
+			separation = distances[i] - distances[i - 1]
+			if separation > self.maxCarSeparation: break
+			else:
+				count += 1
+		return count
+
+	def getSideScore(self, tup):
+		numCars, distances = tup
+
+		if len(distances) == 0: return -1
+
+		minDist = distances[0]
+		vector = np.array([minDist, numCars])
+
+		return np.dot(self.weights, vector)
+
+	# returns the vehicles approaching the intersection from both lanes, along with their distances to intersection
+	# returns the vehicles sorted by distance to intersection
+	def getVehiclesApproachingIntersection(self):
+		leftVehicles = []
+		rightVehicles = []
+
+		for vehicle in self.vehicles:
+			if vehicle.getDirection() == 0:
+				arcDistance = self.getArcDistance(car1=vehicle, theta=self.leftEntranceTheta)
+				if (arcDistance < self.nearIntersectionThreshold):
+					leftVehicles.append((vehicle, arcDistance))
+			else:
+				arcDistance = self.getArcDistance(car1=vehicle, theta=self.rightEntranceTheta)
+				if (arcDistance < self.nearIntersectionThreshold):
+					rightVehicles.append((vehicle, arcDistance))
+
+		leftVehicles.sort(key=lambda tup: tup[1])
+		rightVehicles.sort(key=lambda tup: tup[1])
+
+		return leftVehicles, rightVehicles
+
+
+	def getNextDecision(self):
+		leftDecision = None
+		rightDecision = None
+
+		# get number of vehicles close to intersection at both lanes
+		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
+		leftDistances = [tup[1] for tup in leftVehicles]
+		rightDistances = [tup[1] for tup in rightVehicles]
+
+		numLeft = self.getNumCarsInString(leftDistances)
+		numRight = self.getNumCarsInString(rightDistances)
+
+		leftScore = self.getSideScore((numLeft, leftDistances))
+		rightScore = self.getSideScore((numRight, rightDistances))
+
+		# no result case
+		if ((leftScore == -1) and (rightScore == -1)): return None
+
+		if (leftScore >= 0):
+			leftDecision = (0, min(numLeft, self.maxPassingCars))
+		if (rightScore >= 0):
+			rightDecision = (1, min(numRight, self.maxPassingCars))
+
+		if (leftScore > rightScore):
+			return [leftDecision, rightDecision]
+		else:
+			return [rightDecision, leftDecision]
+
+	def distributeDecision(self):
+		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
+
+		side = self.decision[0][0]
+		numCars = self.decision[0][1]
+
+		if side == 0: passingVehicles = leftVehicles
+		else: passingVehicles = rightVehicles 
+
+		for i in range(numCars):
+			vehicle = passingVehicles[i][0]
+			vehicle.setPassingIntersection(passing=True)
+			if (i == numCars-1):
+				self.lastPassingVehicle = vehicle
+
+
 	# returns vehicle objects each updated with its next position
 	def step(self, vehicles):
-		if (self.stop): 
-			return
-		vehiclesAtIntersection = self.getVehiclesAtIntersection(vehicles)
-		self.vehiclesAtIntersection = vehiclesAtIntersection
+		self.vehicles = vehicles
 
-		# set vehicles at intersection to pending state/update pending counters
-		for vehicle in vehiclesAtIntersection:
-			if (vehicle.isPending() or (self.passingVehicle == vehicle)): continue
-			vehicle.setPending()
-			if (vehicle.getDirection() == 0): self.pendingLeft += 1
-			else: self.pendingRight += 1
+		if (self.decision is None):
+			self.decision = self.getNextDecision()
 
-		# if no vehicle is passing through intersection, choose next vehicle to pass through
-		if (self.passingVehicle is None):
-			selectedVehicle = self.selectVehicle(vehiclesAtIntersection)
-
-			# vehicle is no longer pending and is now going to pass through intersection
-			if (not selectedVehicle is None): 
-				selectedVehicle.setPending(pending=False)
-				if (selectedVehicle.getDirection() == 0): self.pendingLeft -= 1
-				else: self.pendingRight -= 1
-				self.passingVehicle = selectedVehicle
+			if (not self.decision is None):
+				print("decision is ", self.decision)
+				self.distributeDecision()
 
 		# get ordered list of vehicles on either side
 		orderedLeft, orderedRight = self.getOrderedVehiclesPerSide(vehicles)
