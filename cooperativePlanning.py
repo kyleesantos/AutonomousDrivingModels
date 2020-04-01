@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import vehicle as veh
 from util import *
 
 class Coop_Env():
@@ -22,6 +21,7 @@ class Coop_Env():
 		self.decision = None # decision is a list of 'decisions' where a decision is a tuple indicating a side and number of cars to let through
 		self.lastPassingVehicle = None
 		self.vehicles = None
+		self.vehiclesApproachingIntersection = None
 
 	# returns true if the vehicle is approaching the intersection
 	def nearIntersection(self, vehicle):
@@ -139,10 +139,12 @@ class Coop_Env():
 		# no result case
 		if ((leftScore == -1) and (rightScore == -1)): return None
 
+		self.vehiclesApproachingIntersection = leftVehicles, rightVehicles
+
 		if (leftScore >= 0):
-			leftDecision = (veh.RIGHT, min(numLeft, self.maxPassingCars))
+			leftDecision = (CLK, min(numLeft, self.maxPassingCars))
 		if (rightScore >= 0):
-			rightDecision = (veh.LEFT, min(numRight, self.maxPassingCars))
+			rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
 
 		if (leftScore > rightScore):
 			return [leftDecision, rightDecision]
@@ -150,8 +152,8 @@ class Coop_Env():
 			return [rightDecision, leftDecision]
 
 	def distributeDecision(self):
-		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
-
+		#leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
+		leftVehicles, rightVehicles = self.vehiclesApproachingIntersection
 		side = self.decision[0][0]
 		numCars = self.decision[0][1]
 
@@ -175,21 +177,21 @@ class Coop_Env():
 				self.distributeDecision()
 
 		for vehicle in vehicles:
-
 			if (vehicle.isPassingIntersection()):
 				posY = vehicle.getPos()[1]
 				if (vehicle.getDirection() == CLK):
-					distToIntersection = self.getArcDistance(car1=vehicle, theta=self.LEFT_ENTRANCE_THETA)
+					distToIntersection = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
 				else:
 					distToIntersection = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
-				if (posY > self.intersection[1] and (distToIntersection > self.nearIntersectionThreshold)):
+				if ((posY > self.intersection[1]) and (distToIntersection > self.nearIntersectionThreshold)):
 					vehicle.setPassingIntersection(passing=False)
 					if (self.lastPassingVehicle == vehicle):
 						self.lastPassingVehicle = None
 						self.decision[0] = self.decision[1]
 						self.decision[1] = None
 						if (self.decision[0] is None): self.decision = None
-						else: self.distributeDecision()
+						else: 
+							self.distributeDecision()
 		
 
 	def getRightOfWay(self):
