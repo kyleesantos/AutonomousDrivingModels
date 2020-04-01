@@ -112,6 +112,7 @@ class Coop_Env():
 					leftVehicles.append((vehicle, arcDistance))
 			else:
 				arcDistance = self.getArcDistance(car1=vehicle, theta=self.rightEntranceTheta)
+
 				if (arcDistance < self.nearIntersectionThreshold):
 					rightVehicles.append((vehicle, arcDistance))
 
@@ -141,9 +142,9 @@ class Coop_Env():
 		if ((leftScore == -1) and (rightScore == -1)): return None
 
 		if (leftScore >= 0):
-			leftDecision = (0, min(numLeft, self.maxPassingCars))
+			leftDecision = (veh.RIGHT, min(numLeft, self.maxPassingCars))
 		if (rightScore >= 0):
-			rightDecision = (1, min(numRight, self.maxPassingCars))
+			rightDecision = (veh.LEFT, min(numRight, self.maxPassingCars))
 
 		if (leftScore > rightScore):
 			return [leftDecision, rightDecision]
@@ -173,7 +174,6 @@ class Coop_Env():
 			self.decision = self.getNextDecision()
 
 			if (self.decision):
-				#print("decision is ", self.decision)
 				self.distributeDecision()
 
 		for vehicle in vehicles:
@@ -185,7 +185,6 @@ class Coop_Env():
 				else:
 					distToIntersection = self.getArcDistance(car1=vehicle, theta=self.rightEntranceTheta)
 				if (posY > self.intersection[1] and (distToIntersection > self.nearIntersectionThreshold)):
-					#print("this happened so vehicle ", vehicle.getID(), " has passed intersection")
 					vehicle.setPassingIntersection(passing=False)
 					if (self.lastPassingVehicle == vehicle):
 						self.lastPassingVehicle = None
