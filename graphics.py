@@ -3,7 +3,7 @@ import tkinter as tk
 import itertools, math, time
 import numpy as np
 
-from cooperativePlanning import Coop_Env
+from cooperativePlanningv3 import Coop_Env
 from tkinter import *
 from util import *
 import vehicle
@@ -124,7 +124,7 @@ def infoListToText():
 	txt = ""
 	for i in range(len(vehicles)):
 		(v, _, _, _) = vehicles[i]
-		txt += "{}. speed = {}\n".format(i, v.getAngSpeed())
+		txt += "{}. speed = {:.1f}\n".format(i, v.getAngSpeed())
 	return txt
 
 def vehiclesMove():
@@ -132,7 +132,7 @@ def vehiclesMove():
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
 		idm.updateAccels(cars)
-		# coop_env.step(cars)
+		coop_env.step(cars)
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
 			v.update()
 			info.configure(text = infoListToText())
@@ -204,7 +204,6 @@ if __name__ == "__main__":
 
 	# Pick track
 	pickTrack()
-
 	vehiclesMove()
 
 	root.bind("<Key>", keyPress)

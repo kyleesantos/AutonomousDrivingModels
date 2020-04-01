@@ -6,7 +6,7 @@ SCALE = 25 # pixels/m
 
 # Intelligent Driver Model Parameters
 REAL_OPT_VELOCITY = 0.3  # m/s
-REAL_MAX_ACCEL = 0.5     # m/s2
+REAL_MAX_ACCEL = 0.1     # m/s2
 REAL_OPT_DECEL = 0.1     # m/s2
 REAL_BUFFER_DIST = 6.5   # m
 REAL_DETECTION_DIST = 3  # m
@@ -16,7 +16,7 @@ MAX_ACCEL = SCALE * REAL_MAX_ACCEL        # pixels/s2
 OPT_DECEL = SCALE * REAL_OPT_DECEL        # pixels/s2
 BUFFER_DIST = SCALE * REAL_BUFFER_DIST    # pixels
 
-TIME_HEADWAY = 1.5    # s
+TIME_HEADWAY = 2    # s
 ACCEL_EXP = 4
 
 # Information Constraints Parameters
@@ -64,7 +64,7 @@ def findClosestVehicleAhead(vehicle1, vehicles):
 
 
 def updateAccels(vehicles):
-  new_accels = [0]
+  new_accels = []
   for vehicle1 in vehicles:
     # enforce information constraints
     nearby_vehicles = findNearestOnPath(vehicle1, vehicles)
