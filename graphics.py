@@ -3,7 +3,7 @@ import tkinter as tk
 import itertools, math, time
 import numpy as np
 
-from cooperativePlanningv3 import Coop_Env
+from cooperativePlanning import Coop_Env
 from tkinter import *
 from util import *
 import vehicle
@@ -131,8 +131,8 @@ def vehiclesMove():
 	global counter, info
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
-		idm.updateAccels(cars)
 		coop_env.step(cars)
+		idm.updateAccels(cars, coop_env.getRightOfWay())
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
 			v.update()
 			info.configure(text = infoListToText())

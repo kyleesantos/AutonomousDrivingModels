@@ -4,6 +4,7 @@ from util import *
 
 LEFT = 1
 RIGHT = -1
+NEUTRAL = 0
 OUTER = 1
 INNER = -1
 VEH_WIDTH = 25 # half of vehicle width

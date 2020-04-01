@@ -195,6 +195,12 @@ class Coop_Env():
 						else: self.distributeDecision()
 		
 
+	def getRightOfWay(self):
+		if self.decision:
+			return self.decision[0][0]
+		
+		return veh.NEUTRAL
+
 	# use this to set the center of the intersection point if track_config is figure_8
 	def setIntersection(self, pos):
 		self.intersection = pos

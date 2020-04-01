@@ -1,5 +1,8 @@
 import math
 
+LEFT_ENTRANCE_THETA = 45
+RIGHT_ENTRANCE_THETA = 135
+
 def toRadians(deg):
   return (deg / 360.0) * 2 * math.pi
 
