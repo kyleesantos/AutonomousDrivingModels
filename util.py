@@ -1,19 +1,26 @@
 import math
 
+# Track Parameters
 LEFT_ENTRANCE_THETA = 45
 RIGHT_ENTRANCE_THETA = 135
+CTR_CLK = 1
+CLK = -1
+NEUTRAL = 0
+
+MAX_DEG = 360.0
+MAX_RAD = 2 * math.pi
 
 def toRadians(deg):
-  return (deg / 360.0) * 2 * math.pi
+  return (deg / MAX_DEG) * MAX_RAD
 
 def toDegrees(rad):
-  return (rad / (2 * math.pi)) * 360.0
+  return (rad / MAX_RAD) * MAX_DEG
 
 def toAngular(linSpeed, radius):
-  return (linSpeed * 360.0) / (2*math.pi * radius)
+  return (linSpeed * MAX_DEG) / (MAX_RAD * radius)
 
 def toLinear(angSpeed, radius):
-  return (angSpeed / 360.0) * 2*math.pi * radius
+  return (angSpeed / MAX_DEG) * MAX_RAD * radius
 
 def vehiclesCollide(veh1, veh2):
     veh1Min, veh1Max = min(veh1.getAngleBounds()), max(veh1.getAngleBounds())

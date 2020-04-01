@@ -73,28 +73,28 @@ def mousePress(event):
 
 def inTrack(x, y):
 	# Check for overlap
-	dir, tX, tY = vehicle.RIGHT, trackLeftX, trackY
+	dir, tX, tY = CLK, trackLeftX, trackY
 	if (TWO_LANE): tX = trackX
-	elif (x > CANVAS_WIDTH // 2): dir, tX = vehicle.LEFT, trackRightX
+	elif (x > CANVAS_WIDTH // 2): dir, tX = CTR_CLK, trackRightX
 	for (v, _, _, _) in vehicles:
 		x1 = x - tX
 		y1 = y - tY
 		r = math.sqrt((x1)**2 + (y1)**2)
 		a = toDegrees(math.acos(float(x1 / r)))
-		if (y1 > 0): a = (a * -1.0) % 360
+		if (y1 > 0): a = (a * -1.0) % MAX_DEG
 		checkV = vehicle.Vehicle(tX, tY, vehR, a, dir, -1)
 		if (vehiclesCollide(v, checkV)): return (None, None)
 
 	# Check for 2 lane track first
 	r = math.sqrt((tX - x)**2 + (tY - y)**2)
-	if (TWO_LANE or dir == vehicle.RIGHT):
-		if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.RIGHT)
-	elif (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, vehicle.LEFT)
+	if (TWO_LANE or dir == CLK):
+		if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, CLK)
+	elif (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, CTR_CLK)
 	return (None, None)
 
 def placeOnTrack(x, y, direc, r):
 	if (TWO_LANE): x -= trackX
-	elif (direc == vehicle.RIGHT): x -= trackLeftX
+	elif (direc == CLK): x -= trackLeftX
 	else: x -= trackRightX
 	y -= trackY
 	a = toDegrees(math.acos(float(x / r)))
@@ -108,7 +108,7 @@ def makeVehicle(theta, direc):
 	global info
 	# Add Vehicle
 	if (TWO_LANE): tX = trackX
-	elif (direc == vehicle.LEFT): tX = trackRightX
+	elif (direc == CTR_CLK): tX = trackRightX
 	else: tX = trackLeftX
 
 	veh = vehicle.Vehicle(tX, trackY, vehR, theta, direc, len(vehicles))

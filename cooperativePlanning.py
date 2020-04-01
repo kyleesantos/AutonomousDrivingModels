@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import vehicle as veh
+from util import *
 
 class Coop_Env():
 	# Coop_Env houses stats/data on the current state of the cooperative environment
@@ -14,9 +15,7 @@ class Coop_Env():
 		self.pendingRight = 0 # number of vehicles pending from right side
 		self.passingVehicle = None # vehicle currently passing through intersection
 		self.weights = None
-		self.leftEntranceTheta = 45
 		self.maxPassingCars = 3
-		self.rightEntranceTheta = 135
 		self.vehiclesAtIntersection = None
 		self.bufferDistance = 150 # buffer distance between any two cars (should be set appropriately)
 		self.maxCarSeparation = self.bufferDistance + 5
@@ -49,16 +48,16 @@ class Coop_Env():
 			angle2 = car2.getTheta()
 		else:
 			angle2 = theta
-		circumference = 2 * math.pi * car1.getRadius()
+		circumference = MAX_RAD * car1.getRadius()
 
-		if (car1.getDirection() == veh.LEFT):
-			if (angle2 < angle1): arcAngle = (360) - (angle1 - angle2)
+		if (car1.getDirection() == CTR_CLK):
+			if (angle2 < angle1): arcAngle = MAX_DEG - (angle1 - angle2)
 			else: arcAngle = angle2 - angle1
 		else:
-			if (angle1 < angle2): arcAngle = (360) - (angle2 - angle1)
+			if (angle1 < angle2): arcAngle = MAX_DEG - (angle2 - angle1)
 			else: arcAngle = angle1 - angle2
 
-		return (arcAngle/(360)) * circumference
+		return (arcAngle / MAX_DEG) * circumference
 
 
 	# gets the euclidean distance of a vehicle to the intersection 
@@ -71,7 +70,7 @@ class Coop_Env():
 	# returns a feature vector from the given vehicle to use in 
 	# determining the vehicle to pass through intersection
 	def getFeatureVector(self, vehicle):
-		if (vehicle.getDirection() == veh.RIGHT): pendingCount = self.pendingLeft
+		if (vehicle.getDirection() == CLK): pendingCount = self.pendingLeft
 		else: pendingCount = self.pendingRight 
 		return np.array([1/self.getDistanceToIntersection(vehicle), pendingCount])
 
@@ -106,12 +105,12 @@ class Coop_Env():
 		rightVehicles = []
 
 		for vehicle in self.vehicles:
-			if vehicle.getDirection() == veh.RIGHT:
-				arcDistance = self.getArcDistance(car1=vehicle, theta=self.leftEntranceTheta)
+			if vehicle.getDirection() == CLK:
+				arcDistance = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
 				if (arcDistance < self.nearIntersectionThreshold):
 					leftVehicles.append((vehicle, arcDistance))
 			else:
-				arcDistance = self.getArcDistance(car1=vehicle, theta=self.rightEntranceTheta)
+				arcDistance = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if (arcDistance < self.nearIntersectionThreshold):
 					rightVehicles.append((vehicle, arcDistance))
 
@@ -156,7 +155,7 @@ class Coop_Env():
 		side = self.decision[0][0]
 		numCars = self.decision[0][1]
 
-		if side == veh.RIGHT: passingVehicles = leftVehicles
+		if side == CLK: passingVehicles = leftVehicles
 		else: passingVehicles = rightVehicles 
 
 		for i in range(numCars):
@@ -180,10 +179,10 @@ class Coop_Env():
 
 			if (vehicle.isPassingIntersection()):
 				posY = vehicle.getPos()[1]
-				if (vehicle.getDirection() == veh.RIGHT):
-					distToIntersection = self.getArcDistance(car1=vehicle, theta=self.leftEntranceTheta)
+				if (vehicle.getDirection() == CLK):
+					distToIntersection = self.getArcDistance(car1=vehicle, theta=self.LEFT_ENTRANCE_THETA)
 				else:
-					distToIntersection = self.getArcDistance(car1=vehicle, theta=self.rightEntranceTheta)
+					distToIntersection = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if (posY > self.intersection[1] and (distToIntersection > self.nearIntersectionThreshold)):
 					#print("this happened so vehicle ", vehicle.getID(), " has passed intersection")
 					vehicle.setPassingIntersection(passing=False)
@@ -199,7 +198,7 @@ class Coop_Env():
 		if self.decision:
 			return self.decision[0][0]
 		
-		return veh.NEUTRAL
+		return NEUTRAL
 
 	# use this to set the center of the intersection point if track_config is figure_8
 	def setIntersection(self, pos):

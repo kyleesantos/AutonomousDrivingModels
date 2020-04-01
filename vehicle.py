@@ -2,9 +2,6 @@ import math, time
 import idm
 from util import *
 
-LEFT = 1
-RIGHT = -1
-NEUTRAL = 0
 OUTER = 1
 INNER = -1
 VEH_WIDTH = 25 # half of vehicle width
@@ -156,7 +153,7 @@ class Vehicle:
     self._turnCar()
     self._turnWheels()
     self._turnDirection()
-    self.theta = (self.theta + self.angSpeed) % 360
+    self.theta = (self.theta + self.angSpeed) % MAX_DEG
 
   def update(self):
     self._updateAngSpeed()

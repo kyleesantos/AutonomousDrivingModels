@@ -51,21 +51,21 @@ def findNearestOnPath(vehicle, vehicles):
 
 
 def findClosestObstacleAhead(vehicle1, vehicles, rightOfWay):
-  closest_diff = 360.0
+  closest_diff = MAX_DEG
   closest_speed = 0
   theta1 = vehicle1.getTheta()
   thetas = [veh.getTheta() for veh in vehicles]
-  if not(vehicle1.getDirection() == rightOfWay or rightOfWay == vehicle.NEUTRAL):
-    if vehicle1.getDirection() == vehicle.LEFT:
+  if not(vehicle1.getDirection() == rightOfWay or rightOfWay == NEUTRAL):
+    if vehicle1.getDirection() == CTR_CLK:
       thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST,vehicle1.getRadius()))
     else:
       thetas.append(LEFT_ENTRANCE_THETA - toAngular(BUFFER_DIST,vehicle1.getRadius()))
 
   for (i,theta2) in enumerate(thetas):
-    if vehicle1.direc == vehicle.RIGHT:
-      diff = theta1 - theta2 if theta1 > theta2 else theta1 + 360.0 - theta2
+    if vehicle1.direc == CLK:
+      diff = theta1 - theta2 if theta1 > theta2 else theta1 + MAX_DEG - theta2
     else:
-      diff = theta2 - theta1 if theta2 > theta1 else theta2 + 360.0 - theta1
+      diff = theta2 - theta1 if theta2 > theta1 else theta2 + MAX_DEG - theta1
     if diff < closest_diff:
       closest_diff = diff
       if i < len(vehicles):
@@ -81,8 +81,8 @@ def updateAccels(vehicles, rightOfWay):
     # enforce information constraints
     nearby_vehicles = findNearestOnPath(vehicle1, vehicles)
     (closest_speed,diff) = findClosestObstacleAhead(vehicle1, nearby_vehicles, rightOfWay)
-    if diff < 360.0:
-      dist = 2 * math.pi * vehicle1.getRadius() * (diff / 360.0)
+    if diff < MAX_DEG:
+      dist = MAX_RAD * vehicle1.getRadius() * (diff / MAX_DEG)
       lin_speed1 = abs(toLinear(vehicle1.getAngSpeed(), vehicle1.getRadius()))
       lin_speed2 = abs(toLinear(closest_speed, vehicle1.getRadius()))
       new_accel = calculateAccel(dist, lin_speed1, lin_speed1 - lin_speed2)
