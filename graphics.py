@@ -32,15 +32,16 @@ trackX = CANVAS_WIDTH // 2
 canvas = tk.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
 canvas.pack()
 
-counter = 0
-timerLabel = Label(text = "0")
-info = Label(text = "")
-info.place(x = MARGIN // 9, y = MARGIN // 9)
-buttonTrack = []
+timerCounter = None
+timerLabel = Label(text = "0.0 s", fg = "red")
+infoLabel = Label(text = "")
+loopLabel = Label(text = "0", fg = "darkBlue")
+buttonCoord = []
 move = False
-# array of veh object, veh canvas, wheels canvas, triangle canvas
+# array of veh object, veh canvas, wheels canvas, triangle canvas, id canvas
 vehicles = []
-tempSpace = 20
+totalLoops = 0
+textSpace = 20
 
 env = Env(mode=NON_COOP)
 env.setIntersection((601, 367))  # y was 397 initially
@@ -48,19 +49,19 @@ env.setIntersection((601, 367))  # y was 397 initially
 env.setWeights(np.array([0,1]))
 
 def keyPress(event):
-	global move, counter
+	global move, timerCounter
 	if (event.char == "s"):
-		counter = time.time()
+		if timerCounter == None: timerCounter = time.time()
 		move = not move
 	if (event.char == "r"):
-		counter = time.time()
+		timerCounter = time.time()
 		timerLabel.config(text = "0.0 s")
 		reset()
 	if (event.char == "1"):
-		for v, _, _, _ in vehicles:
+		for v, _, _, _, _ in vehicles:
 			v.increaseAngSpeed(1)
 	if (event.char == "2"):
-		for v, _, _, _ in vehicles:
+		for v, _, _, _, _ in vehicles:
 			v.decreaseAngSpeed(1)
 
 def mousePress(event):
@@ -69,27 +70,29 @@ def mousePress(event):
 	r, direc = inTrack(x, y)
 	if (r != None):
 		theta = placeOnTrack(x, y, direc, r)
-		makeVehicle(theta, direc)
+		makeVehicle(theta, direc, r)
 
 def inTrack(x, y):
+	global vehR
 	# Check for overlap
-	dir, tX, tY = CLK, trackLeftX, trackY
+	direc, tX, tY, tR = CLK, trackLeftX, trackY, vehR
 	if (TWO_LANE): tX = trackX
-	elif (x > CANVAS_WIDTH // 2): dir, tX = CTR_CLK, trackRightX
-	for (v, _, _, _) in vehicles:
+	elif (x > CANVAS_WIDTH // 2): direc, tX = CTR_CLK, trackRightX
+	for (v, _, _, _, _) in vehicles:
 		x1 = x - tX
 		y1 = y - tY
 		r = math.sqrt((x1)**2 + (y1)**2)
 		a = toDegrees(math.acos(float(x1 / r)))
 		if (y1 > 0): a = (a * -1.0) % MAX_DEG
-		checkV = vehicle.Vehicle(tX, tY, vehR, a, dir, -1)
+		if (TWO_LANE and r > outR): tR += TRACK_WIDTH
+		checkV = vehicle.Vehicle(tX, tY, tR, a, direc, -1)
 		if (vehiclesCollide(v, checkV)): return (None, None)
 
 	# Check for 2 lane track first
 	r = math.sqrt((tX - x)**2 + (tY - y)**2)
-	if (TWO_LANE or dir == CLK):
-		if (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, CLK)
-	elif (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, CTR_CLK)
+	if (TWO_LANE and ((r <= outR and r >= (outR - TRACK_WIDTH)) or 
+			(r <= outR + TRACK_WIDTH and r >= outR))): return (r, CLK)
+	elif (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, direc)
 	return (None, None)
 
 def placeOnTrack(x, y, direc, r):
@@ -104,45 +107,52 @@ def placeOnTrack(x, y, direc, r):
 def flatten(l):
 	return [item for tup in l for item in tup]
 
-def makeVehicle(theta, direc):
-	global info
+def makeVehicle(theta, direc, r):
+	global info, vehR
 	# Add Vehicle
-	if (TWO_LANE): tX = trackX
+	radius = vehR
+	if (TWO_LANE): 
+		tX = trackX
+		if (r <= outR + TRACK_WIDTH and r >= outR): radius += TRACK_WIDTH
 	elif (direc == CTR_CLK): tX = trackRightX
 	else: tX = trackLeftX
 
-	veh = vehicle.Vehicle(tX, trackY, vehR, theta, direc, len(vehicles))
-	vehCanvas = canvas.create_polygon(veh.getVehPoints(), fill='red')
+	v = vehicle.Vehicle(tX, trackY, radius, theta, direc, len(vehicles))
+	vehCanvas = canvas.create_polygon(v.getVehPoints(), fill='red')
 	wheelsCanvas = []
-	for wP in veh.getWheelPoints():
+	for wP in v.getWheelPoints():
 		wheelsCanvas.append(canvas.create_polygon(wP, fill='black'))
-	dirCanvas = canvas.create_polygon(veh.getDirPoints(), fill = 'yellow')
-	vehicles.append((veh, vehCanvas, wheelsCanvas, dirCanvas))
-	info.configure(text = infoListToText())
+	dirCanvas = canvas.create_polygon(v.getDirPoints(), fill = 'yellow')
+	idCanvas = canvas.create_text(v.getX(), v.getY(), text = str(v.getID()))
+	vehicles.append((v, vehCanvas, wheelsCanvas, dirCanvas, idCanvas))
+	infoLabel.configure(text = infoListToText())
 
 def infoListToText():
 	txt = ""
 	for i in range(len(vehicles)):
-		(v, _, _, _) = vehicles[i]
+		(v, _, _, _, _) = vehicles[i]
 		txt += "{}. speed = {:.1f}\n".format(i, v.getAngSpeed())
 	return txt
 
 def vehiclesMove():
-	global counter, info
+	global timerCounter, info, totalLoops
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
 		env.step(cars)
 		idm.updateAccels(cars, env.getRightOfWay())
-		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
+		for v, vehCanvas, wheelsCanvas, dirCanvas, idCanvas in vehicles:
 			v.update()
-			info.configure(text = infoListToText())
+			if (v.getLooped()): totalLoops += 1
+			infoLabel.configure(text = infoListToText())
 			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
 			for i in range(len(wheelsCanvas)):
 				w = wheelsCanvas[i]
 				wP = v.getWheelPoints()[i]
 				canvas.coords(w, *flatten(wP))
 			canvas.coords(dirCanvas, *flatten(v.getDirPoints()))
-		timerLabel.config(text = "{0:.1f} s".format(round(time.time() - counter, 1)))
+			canvas.coords(idCanvas, v.getX(), v.getY())
+		timerLabel.config(text = "{0:.1f} s".format(round(time.time() - timerCounter, 1)))
+		loopLabel.config(text = totalLoops)
 	root.after(10, vehiclesMove)
 
 
@@ -153,40 +163,74 @@ def drawTrack(x, y, outR, inR):
 		fill = 'white', outline = "")
 
 def figure8Track():
-	drawTrack(trackLeftX, trackY, outR, outR - TRACK_WIDTH)
-	drawTrack(trackRightX, trackY, outR, outR - TRACK_WIDTH)
+	inR =  outR - TRACK_WIDTH
+	drawTrack(trackLeftX, trackY, outR, inR)
+	drawTrack(trackRightX, trackY, outR, inR)
+
+	# Checkered finish line
+	drawFinishLine(CANVAS_WIDTH // 2 - (TRACK_WIDTH // 2), trackY, 13)
+	canvas.create_oval(trackRightX - inR, trackY - inR, trackRightX + inR, 
+		trackY + inR, fill = 'white', outline = "")
+
+def drawFinishLine(x, y, blocks):
+	d = TRACK_WIDTH // blocks
+	for j in [-1, 0]:
+		y1, y2 = y + d * j, y + d * (j + 1)
+		for i in range(blocks + 1):
+			x1 = x + i * d
+			x2 = x + (i + 1) * d
+			if ((i + j) % 2 == 0): color = 'white'
+			else: color = 'black'
+			canvas.create_rectangle(x1, y1, x2, y2, fill = color, outline = "")
 
 def twoLaneTrack():
 	drawTrack(trackX, trackY, outR + TRACK_WIDTH, outR - TRACK_WIDTH)
 	canvas.create_oval(trackX - outR, trackY - outR, trackX + outR,
 		trackY + outR, dash = (10, 7), outline = "white")
 
+	# Checkered finish line
+	drawFinishLine(trackX + outR - TRACK_WIDTH, trackY, 13)
+	drawFinishLine(trackX + outR, trackY, 13)
+
 def drawTrackButton():
-	global buttonTrack
+	global buttonCoord
 	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN // 4
 	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN // 2
 	canvas.create_rectangle(x1, y1, x2, y2, fill = "grey",
 		outline = "darkGreen")
 	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
 		text = "Change Track", fill = 'darkGreen')
-	buttonTrack = [x1, y1, x2, y2]
+	buttonCoord = [x1, y1, x2, y2]
+
+def drawTimer():
+	timerLabel.place(x = CANVAS_WIDTH/2 - MARGIN, y = MARGIN // 3 * 2)
+	loopLabel.place(x = CANVAS_WIDTH/2 + MARGIN, y = MARGIN // 3 * 2)
 
 def changeTrack(x, y):
-	global buttonTrack, TWO_LANE
-	[x1, y1, x2, y2] = buttonTrack
+	global buttonCoord, TWO_LANE
+	[x1, y1, x2, y2] = buttonCoord
 	if (x > x1 and x < x2 and y > y1 and y < y2):
 		TWO_LANE = not TWO_LANE
 		reset()
 
 def reset():
-	global vehicles
+	global vehicles, totalLoops
+	totalLoops = 0
 	canvas.delete("all")
 	# Add title and car information at top and bottom of screen
 	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 10,
-		text='Cooperative vs Non-Cooperative Autonomous Driving')
+		text='      Cooperative vs Non-Cooperative Autonomous Driving')
+	canvas.create_text(CANVAS_WIDTH/2 - MARGIN * 5 // 6, MARGIN // 2,
+		text='Timer:', fill = 'red')
+	canvas.create_text(CANVAS_WIDTH/2 + MARGIN, MARGIN // 2,
+		text='   Total Loops:', fill = 'darkBlue')
 	vehicles = []
-	info.configure(text = "")
+
+	infoLabel.place(x = MARGIN // 9, y = MARGIN // 9)
+	infoLabel.configure(text = "")
+	loopLabel.configure(text = str(totalLoops))
 	drawTrackButton()
+	drawTimer()
 	pickTrack()
 
 def pickTrack():
@@ -197,8 +241,6 @@ def pickTrack():
 
 
 if __name__ == "__main__":
-
-	# timerLabel.place(x = CANVAS_WIDTH/2, y = MARGIN // 3 * 2)
 	reset()
 	drawTrackButton()
 

@@ -20,6 +20,7 @@ class Vehicle:
     self.trackY = trackY
     self.r = r
     self.theta = theta # degrees
+    self.looped = False
     vehX = r + self.trackX
     vehY = self.trackY
     self.direc = direc
@@ -59,8 +60,9 @@ class Vehicle:
       self.wheelAngles.append(self._getAngles(self.wheelPoints[i], self.wheelRadii[i]))
 
     # triangle direction marker
-    self.dirPoints = [(vehX, vehY - (self.direc * VEH_LENGTH//3))]
-    self.dirPoints.extend([(vehX - VEH_WIDTH //2, vehY), (vehX + VEH_WIDTH //2, vehY)])
+    self.dirPoints = [(vehX, vehY - (self.direc * VEH_LENGTH//6)), 
+      (vehX - VEH_WIDTH //2, vehY + (self.direc * VEH_LENGTH//6)), 
+      (vehX + VEH_WIDTH //2, vehY + (self.direc * VEH_LENGTH//6))]
     self.dirRadii = self._getRadii(self.dirPoints)
     self.dirAngles = self._getAngles(self.dirPoints, self.dirRadii)
 
@@ -116,6 +118,12 @@ class Vehicle:
     y = self.trackY - r * math.sin(a)
     return (x, y)
 
+  def _passIntersection(self):
+    prev = self.theta
+    self.theta = (self.theta + self.angSpeed) % MAX_DEG
+    curr = self.theta
+    self.looped = (prev < (MAX_DEG // 2) and curr > (MAX_DEG // 2) and 
+      (not self.looped))
 
   def _turnCar(self):
     newPoints = []
@@ -153,7 +161,7 @@ class Vehicle:
     self._turnCar()
     self._turnWheels()
     self._turnDirection()
-    self.theta = (self.theta + self.angSpeed) % MAX_DEG
+    self._passIntersection()
 
   def update(self):
     self._updateAngSpeed()
@@ -231,3 +239,6 @@ class Vehicle:
   def decreaseAngSpeed(self, amount):
     newSpeed = min(max(abs(self.angSpeed) - amount, 0), abs(self.optAngSpeed))
     self.angSpeed = self.direc * newSpeed
+
+  def getLooped(self):
+    return self.looped
