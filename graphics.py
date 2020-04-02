@@ -3,7 +3,7 @@ import tkinter as tk
 import itertools, math, time
 import numpy as np
 
-from cooperativePlanning import Coop_Env
+from cooperativePlanning import Env
 from tkinter import *
 from util import *
 import vehicle
@@ -42,10 +42,10 @@ move = False
 vehicles = []
 tempSpace = 20
 
-coop_env = Coop_Env()
-coop_env.setIntersection((601, 367))  # y was 397 initially
-coop_env.setIntersectionThreshold(159) # threshold was 194 initially
-coop_env.setWeights(np.array([0,1]))
+env = Env(mode=NON_COOP)
+env.setIntersection((601, 367))  # y was 397 initially
+#coop_env.setIntersectionThreshold(159) # threshold was 194 initially
+env.setWeights(np.array([0,1]))
 
 def keyPress(event):
 	global move, counter
@@ -131,8 +131,8 @@ def vehiclesMove():
 	global counter, info
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
-		coop_env.step(cars)
-		idm.updateAccels(cars, coop_env.getRightOfWay())
+		env.step(cars)
+		idm.updateAccels(cars, env.getRightOfWay())
 		for v, vehCanvas, wheelsCanvas, dirCanvas in vehicles:
 			v.update()
 			info.configure(text = infoListToText())

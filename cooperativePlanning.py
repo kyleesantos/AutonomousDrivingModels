@@ -3,14 +3,15 @@ import numpy as np
 import random
 from util import *
 
-class Coop_Env():
-	# Coop_Env houses stats/data on the current state of the cooperative environment
+class Env():
+	# Coop_Env houses stats/data on the current state of the environment. initialize NON_COOP OR COOP mode depending on desired control mechanism
 
 	def __init__(self, track_config="figure_8", mode=NON_COOP):
 		self.track_config = track_config
 		self.mode = mode
 		self.intersection = None # should be set by setIntersection if track_config is figure_8
-		self.nearIntersectionThreshold = 600
+		self.nearIntersectionThreshold = 600 # vehicles with less than this arc distance to intersection are considered as 'approaching' intersection
+		self.atIntersectionThreshold = 150 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersectioin
 		self.pendingLeft = 0 # number of vehicles pending from left side
 		self.pendingRight = 0 # number of vehicles pending from right side
 		self.passingVehicle = None # vehicle currently passing through intersection
@@ -77,9 +78,9 @@ class Coop_Env():
 	# assings a score to the left and right sides of the track, indicating priority when choosing 
 	# which lane to 'open' at the intersection
 	def getSideScore(self, tup):
-		numCars, distances = tup
+		vehicleAtIntersection, numCars, distances = tup
 
-		if len(distances) == 0: return -1
+		if ((len(distances) == 0) or (not vehicleAtIntersection)): return -1
 
 		minDist = distances[0]
 		vector = np.array([1/minDist, numCars])
@@ -107,11 +108,28 @@ class Coop_Env():
 
 		return leftVehicles, rightVehicles
 
+	def checkVehiclesAtIntersection(self):
+		atLeft, atRight = False, False
+
+		for vehicle in self.vehicles:
+			if (vehicle.getDirection() == CLK):
+				arcDistance = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
+				if (arcDistance < self.atIntersectionThreshold):
+					atLeft = True
+			else:
+				arcDistance = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
+				if (arcDistance < self.atIntersectionThreshold):
+					atRight = True
+
+		return atLeft, atRight
 	# makes a decision on which cars to let through the intersection
 	# returns none if no cars are at the intersection
 	def getNextDecision(self):
 		leftDecision = None
 		rightDecision = None
+
+		# check if any vehicles are at the intersection
+		atLeft, atRight = self.checkVehiclesAtIntersection()
 
 		# get number of vehicles close to intersection at both lanes
 		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
@@ -121,8 +139,8 @@ class Coop_Env():
 		numLeft = self.getNumCarsInString(leftDistances)
 		numRight = self.getNumCarsInString(rightDistances)
 
-		leftScore = self.getSideScore((numLeft, leftDistances))
-		rightScore = self.getSideScore((numRight, rightDistances))
+		leftScore = self.getSideScore((atLeft, numLeft, leftDistances))
+		rightScore = self.getSideScore((atRight, numRight, rightDistances))
 
 		# no result case
 		if ((leftScore == -1) and (rightScore == -1)): return None
@@ -132,12 +150,10 @@ class Coop_Env():
 		if self.mode == NON_COOP: 
 			options = []
 
-			if (leftScore >= 0):
-				leftDecision = (CLK, min(numLeft, self.maxPassingCars))
-				if (leftDecision): options.append(leftDecision)
-			if (rightScore >= 0):
-				rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
-				if (rightDecision): options.append(rightDecision)
+			if (atLeft):
+				options.append((CLK, 1))
+			if (atRight):
+				options.append((CTR_CLK, 1))
 
 			return [random.choice(options), None]
 
