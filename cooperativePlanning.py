@@ -85,7 +85,12 @@ class Env():
 		minDist = distances[0]
 		vector = np.array([1/minDist, numCars])
 
-		return np.dot(self.weights, vector)
+		if (self.mode == NON_COOP):
+			weights = np.array([1, 0])
+		elif (self.mode == COOP):
+			weights = self.weights
+
+		return np.dot(weights, vector)
 
 	# returns the vehicles approaching the intersection from both lanes, along with their distances to intersection
 	# returns the vehicles sorted by distance to intersection
@@ -136,8 +141,13 @@ class Env():
 		leftDistances = [tup[1] for tup in leftVehicles]
 		rightDistances = [tup[1] for tup in rightVehicles]
 
-		numLeft = self.getNumCarsInString(leftDistances)
-		numRight = self.getNumCarsInString(rightDistances)
+		# one person goes in non coop mode
+		if self.mode == NON_COOP:
+			numLeft = 1
+			numRight = 1
+		elif self.mode == COOP:	
+			numLeft = self.getNumCarsInString(leftDistances)
+			numRight = self.getNumCarsInString(rightDistances)
 
 		leftScore = self.getSideScore((atLeft, numLeft, leftDistances))
 		rightScore = self.getSideScore((atRight, numRight, rightDistances))
@@ -147,22 +157,17 @@ class Env():
 
 		self.vehiclesApproachingIntersection = leftVehicles, rightVehicles
 
-		if self.mode == NON_COOP: 
-			options = []
+		if (leftScore >= 0):
+			leftDecision = (CLK, min(numLeft, self.maxPassingCars))
+		if (rightScore >= 0):
+			rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
 
-			if (atLeft):
-				options.append((CLK, 1))
-			if (atRight):
-				options.append((CTR_CLK, 1))
-
-			return [random.choice(options), None]
-
-		elif (self.mode == COOP): 
-			if (leftScore >= 0):
-				leftDecision = (CLK, min(numLeft, self.maxPassingCars))
-			if (rightScore >= 0):
-				rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
-
+		if self.mode == NON_COOP:
+			if (leftScore >= rightScore):
+				return [leftDecision, None]
+			else:
+				return [rightDecision, None]
+		elif self.mode == COOP:
 			if (leftScore > rightScore):
 				return [leftDecision, rightDecision]
 			else:
