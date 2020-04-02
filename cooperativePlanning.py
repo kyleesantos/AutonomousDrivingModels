@@ -1,14 +1,15 @@
 import math
 import numpy as np
+import random
 from util import *
 
 class Coop_Env():
 	# Coop_Env houses stats/data on the current state of the cooperative environment
 
-	def __init__(self, track_config="figure_8"):
+	def __init__(self, track_config="figure_8", mode=NON_COOP):
 		self.track_config = track_config
+		self.mode = mode
 		self.intersection = None # should be set by setIntersection if track_config is figure_8
-		self.intersectionThreshold = None # distance from the car to intersection with which a vehicle is considered to be at intersection
 		self.nearIntersectionThreshold = 600
 		self.pendingLeft = 0 # number of vehicles pending from left side
 		self.pendingRight = 0 # number of vehicles pending from right side
@@ -23,19 +24,6 @@ class Coop_Env():
 		self.vehicles = None
 		self.vehiclesApproachingIntersection = None
 
-	# returns true if the vehicle is approaching the intersection
-	def nearIntersection(self, vehicle):
-		_, intersectionY = self.intersection
-		posY = vehicle.getPos()[1]
-
-		# if car is below intersection point, then it has already passed the intersection
-		if (posY > intersectionY): return False
-
-		distance = self.getDistanceToIntersection(vehicle)
-
-		if (distance <= self.intersectionThreshold): return True
-
-		return False
 
 	# return value is how far ahead (along circle) that car2 is from car1
 	# should only be called with two cars from the same side/circle else
@@ -94,7 +82,7 @@ class Coop_Env():
 		if len(distances) == 0: return -1
 
 		minDist = distances[0]
-		vector = np.array([minDist, numCars])
+		vector = np.array([1/minDist, numCars])
 
 		return np.dot(self.weights, vector)
 
@@ -141,15 +129,28 @@ class Coop_Env():
 
 		self.vehiclesApproachingIntersection = leftVehicles, rightVehicles
 
-		if (leftScore >= 0):
-			leftDecision = (CLK, min(numLeft, self.maxPassingCars))
-		if (rightScore >= 0):
-			rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
+		if self.mode == NON_COOP: 
+			options = []
 
-		if (leftScore > rightScore):
-			return [leftDecision, rightDecision]
-		else:
-			return [rightDecision, leftDecision]
+			if (leftScore >= 0):
+				leftDecision = (CLK, min(numLeft, self.maxPassingCars))
+				if (leftDecision): options.append(leftDecision)
+			if (rightScore >= 0):
+				rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
+				if (rightDecision): options.append(rightDecision)
+
+			return [random.choice(options), None]
+
+		elif (self.mode == COOP): 
+			if (leftScore >= 0):
+				leftDecision = (CLK, min(numLeft, self.maxPassingCars))
+			if (rightScore >= 0):
+				rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
+
+			if (leftScore > rightScore):
+				return [leftDecision, rightDecision]
+			else:
+				return [rightDecision, leftDecision]
 
 	def distributeDecision(self):
 		#leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
@@ -206,6 +207,3 @@ class Coop_Env():
 
 	def setWeights(self, weights):
 		self.weights = weights
-
-	def setIntersectionThreshold(self, value):
-		self.intersectionThreshold = value
