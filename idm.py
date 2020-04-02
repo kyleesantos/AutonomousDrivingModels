@@ -57,9 +57,9 @@ def findClosestObstacleAhead(vehicle1, vehicles, rightOfWay):
   thetas = [veh.getTheta() for veh in vehicles]
   if not(vehicle1.getDirection() == rightOfWay or rightOfWay == NEUTRAL):
     if vehicle1.getDirection() == CTR_CLK:
-      thetas.append(RIGHT_ENTRANCE_THETA - toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
+      thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
     else:
-      thetas.append(LEFT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
+      thetas.append(LEFT_ENTRANCE_THETA - toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
 
   for (i,theta2) in enumerate(thetas):
     if vehicle1.direc == CLK:
