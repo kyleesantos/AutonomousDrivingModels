@@ -119,11 +119,12 @@ class Vehicle:
     return (x, y)
 
   def _passIntersection(self):
-    prev = self.theta
+    prev = self.theta % MAX_DEG
     self.theta = (self.theta + self.angSpeed) % MAX_DEG
-    curr = self.theta
+    curr = self.theta % MAX_DEG
     self.looped = (prev < (MAX_DEG // 2) and curr > (MAX_DEG // 2) and 
       (not self.looped))
+
 
   def _turnCar(self):
     newPoints = []
