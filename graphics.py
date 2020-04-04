@@ -46,7 +46,7 @@ textSpace = 20
 env = Env(mode=NON_COOP)
 env.setIntersection((601, 367))  # y was 397 initially
 #coop_env.setIntersectionThreshold(159) # threshold was 194 initially
-env.setWeights(np.array([0,1]))
+env.setWeights(np.array([1,1]))
 
 def keyPress(event):
 	global move, timerCounter

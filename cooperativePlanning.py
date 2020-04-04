@@ -19,7 +19,7 @@ class Env():
 		self.maxPassingCars = 3
 		self.vehiclesAtIntersection = None
 		self.bufferDistance = 150 # buffer distance between any two cars (should be set appropriately)
-		self.maxCarSeparation = self.bufferDistance + 5
+		self.maxCarSeparation = 250
 		self.decision = None # decision is a list of 'decisions' where a decision is a tuple indicating a side and number of cars to let through
 		self.lastPassingVehicle = None
 		self.vehicles = None
@@ -141,6 +141,7 @@ class Env():
 		leftDistances = [tup[1] for tup in leftVehicles]
 		rightDistances = [tup[1] for tup in rightVehicles]
 
+
 		# one person goes in non coop mode
 		if self.mode == NON_COOP:
 			numLeft = 1
@@ -188,7 +189,7 @@ class Env():
 			if (i == numCars-1):
 				self.lastPassingVehicle = vehicle
 
-	# returns vehicle objects each updated with its next position
+	# updates environment state and makes decision on vehicles to pass through the intersection 
 	def step(self, vehicles):
 		self.vehicles = vehicles
 
