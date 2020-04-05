@@ -48,6 +48,7 @@ def initEnv():
 	global env
 	env = Env(mode=mode)
 	env.setIntersection((610, 367))
+	#env.setIntersection((trackX, trackY))
 	env.setWeights(np.array([1,1]))
 
 def keyPress(event):
