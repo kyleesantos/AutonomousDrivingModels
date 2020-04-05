@@ -7,7 +7,7 @@ REAL_OPT_VELOCITY = 0.3  # m/s
 REAL_MAX_ACCEL = 0.1     # m/s2
 REAL_OPT_DECEL = 0.1     # m/s2
 REAL_BUFFER_DIST = 6.5   # m
-REAL_DETECTION_DIST = 3  # m
+REAL_DETECTION_DIST = 6  # m
 
 OPT_VELOCITY = SCALE * REAL_OPT_VELOCITY  # pixels/s
 MAX_ACCEL = SCALE * REAL_MAX_ACCEL        # pixels/s2
@@ -48,12 +48,12 @@ def findNearestOnPath(vehicle, vehicles):
   return nearby_vehicles
 
 
-def findClosestObstacleAhead(vehicle1, vehicles, rightOfWay):
+def findClosestObstacleAhead(vehicle1, vehicles):
   closest_diff = MAX_DEG
   closest_speed = 0
   theta1 = vehicle1.getTheta()
   thetas = [veh.getTheta() for veh in vehicles]
-  if not(vehicle1.getDirection() == rightOfWay or rightOfWay == NEUTRAL):
+  if not vehicle1.isPassingIntersection():
     if vehicle1.getDirection() == CTR_CLK:
       thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
     else:
@@ -73,11 +73,11 @@ def findClosestObstacleAhead(vehicle1, vehicles, rightOfWay):
   return closest_speed, closest_diff
 
 
-def updateAccels(vehicles, rightOfWay):
+def updateAccels(vehicles):
   for vehicle1 in vehicles:
     # enforce information constraints
     nearby_vehicles = findNearestOnPath(vehicle1, vehicles)
-    (closest_speed,diff) = findClosestObstacleAhead(vehicle1, nearby_vehicles, rightOfWay)
+    (closest_speed,diff) = findClosestObstacleAhead(vehicle1, nearby_vehicles)
     if diff < MAX_DEG:
       dist = MAX_RAD * vehicle1.getRadius() * (diff / MAX_DEG)
       lin_speed1 = abs(toLinear(vehicle1.getAngSpeed(), vehicle1.getRadius()))
