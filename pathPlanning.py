@@ -277,13 +277,14 @@ class Env():
 			chains = (self.getChainsOfCars(leftDistances, following=True) +
 						self.getChainsOfCars(rightDistances, following=True))
 			leadingCars = [chain[0] for chain in chains]
-			idm.updateAccels(leadingCars, self.getRightOfWay())
+			idm.updateAccels(vehicles)
 			for (i,chain) in enumerate(chains):
-				accel = leadingCars[i].getAcceleration()
+				leadingAccel = leadingCars[i].getAcceleration()
 				for vehicle in chain:
-					vehicle.setAcceleration(accel, angular=True)
+					tempAccel = vehicle.getAcceleration()
+					vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
 		else:
-			idm.updateAccels(vehicles, self.getRightOfWay())
+			idm.updateAccels(vehicles)
 
 
 	def getRightOfWay(self):
