@@ -36,12 +36,13 @@ timerCounter = None
 timerLabel = Label(text = "0.0 s", fg = "red")
 infoLabel = Label(text = "")
 loopLabel = Label(text = "0", fg = "darkBlue")
-buttonCoord = []
+trackBCoords, detBCoords = [], []
 move = False
-# array of veh object, veh canvas, wheels canvas, triangle canvas, id canvas
+testing, testingTime = False, 5.0
+testList = [(0, CLK), (0, CTR_CLK)] # degrees, direction
 vehicles = []
+detectionRadius = False
 totalLoops = 0
-textSpace = 20
 mode = COOP
 
 def initEnv():
@@ -49,6 +50,15 @@ def initEnv():
 	env = Env(mode=mode)
 	env.setIntersection((610, 367))
 	env.setWeights(np.array([1,1]))
+
+def testCase(m):
+	global timerCounter, move, testing, mode, testList
+	mode = m
+	reset()
+	for (theta, direc) in testList:
+		makeVehicle(theta, direc, vehR)
+	timerCounter = time.time()
+	move, testing = True, True
 
 def keyPress(event):
 	global move, timerCounter
@@ -59,16 +69,19 @@ def keyPress(event):
 		timerCounter = time.time()
 		timerLabel.config(text = "0.0 s")
 		reset()
+	if (event.char == "t"):
+		testCase(NON_COOP)
 	if (event.char == "1"):
-		for v, _, _, _, _ in vehicles:
+		for v in vehicles:
 			v.increaseAngSpeed(1)
 	if (event.char == "2"):
-		for v, _, _, _, _ in vehicles:
+		for v in vehicles:
 			v.decreaseAngSpeed(1)
 
 def mousePress(event):
 	x, y = event.x, event.y
 	changeTrack(x, y)
+	addDetectionRadius(x, y)
 	r, direc = inTrack(x, y)
 	if (r != None):
 		theta = placeOnTrack(x, y, direc, r)
@@ -80,7 +93,7 @@ def inTrack(x, y):
 	direc, tX, tY, tR = CLK, trackLeftX, trackY, vehR
 	if (TWO_LANE): tX = trackX
 	elif (x > CANVAS_WIDTH // 2): direc, tX = CTR_CLK, trackRightX
-	for (v, _, _, _, _) in vehicles:
+	for v in vehicles:
 		x1 = x - tX
 		y1 = y - tY
 		r = math.sqrt((x1)**2 + (y1)**2)
@@ -126,35 +139,54 @@ def makeVehicle(theta, direc, r):
 		wheelsCanvas.append(canvas.create_polygon(wP, fill='black'))
 	dirCanvas = canvas.create_polygon(v.getDirPoints(), fill = 'yellow')
 	idCanvas = canvas.create_text(v.getX(), v.getY(), text = str(v.getID()))
-	vehicles.append((v, vehCanvas, wheelsCanvas, dirCanvas, idCanvas))
+	detCanvas = canvas.create_oval(v.getX() - idm.DETECTION_DIST, 
+		v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST, 
+		v.getY() + idm.DETECTION_DIST, outline = "DarkOrange2")
+	v.setCanvas([vehCanvas, wheelsCanvas, dirCanvas, idCanvas, detCanvas])
+	vehicles.append(v)
 	infoLabel.configure(text = infoListToText())
 
 def infoListToText():
 	txt = ""
 	for i in range(len(vehicles)):
-		(v, _, _, _, _) = vehicles[i]
+		v = vehicles[i]
 		txt += "{}. speed = {:.1f}\n".format(i, v.getAngSpeed())
 	return txt
 
 def vehiclesMove():
 	global timerCounter, info, totalLoops
 	if move:
-		cars = [vehicle[0] for vehicle in vehicles]
-		env.step(cars)
-		for v, vehCanvas, wheelsCanvas, dirCanvas, idCanvas in vehicles:
+		env.step(vehicles)
+		for v in vehicles:
 			v.update()
 			if (v.getLooped()): totalLoops += 1
 			infoLabel.configure(text = infoListToText())
-			canvas.coords(vehCanvas, *flatten(v.getVehPoints()))
-			for i in range(len(wheelsCanvas)):
-				w = wheelsCanvas[i]
+			canvas.coords(v.getVehicleCanvas(), *flatten(v.getVehPoints()))
+			for i in range(len(v.getWheelsCanvas())):
+				w = v.getWheelsCanvas()[i]
 				wP = v.getWheelPoints()[i]
 				canvas.coords(w, *flatten(wP))
-			canvas.coords(dirCanvas, *flatten(v.getDirPoints()))
-			canvas.coords(idCanvas, v.getX(), v.getY())
+			canvas.coords(v.getDirCanvas(), *flatten(v.getDirPoints()))
+			canvas.coords(v.getIDCanvas(), v.getX(), v.getY())
+			canvas.coords(v.getDetRadCanvas(), v.getX() - idm.DETECTION_DIST, 
+				v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST, 
+				v.getY() + idm.DETECTION_DIST)
 		timerLabel.config(text = "{0:.1f} s".format(round(time.time() - timerCounter, 1)))
 		loopLabel.config(text = totalLoops)
+		stopTesting()
 	root.after(10, vehiclesMove)
+
+def stopTesting():
+	global testing, timerCounter, testingTime, move, mode
+	if (timerCounter != None and testing and 
+		(time.time() - timerCounter) >= testingTime):
+		move = False
+		if (mode == NON_COOP): modeName = "NON-COOPERATIVE"
+		else: modeName = "COOPERATIVE"
+		print(modeName, totalLoops)
+		if (mode == NON_COOP):
+			root.after(1000, testCase(COOP))
+		testing = False
 
 
 def drawTrack(x, y, outR, inR):
@@ -194,25 +226,45 @@ def twoLaneTrack():
 	drawFinishLine(trackX + outR, trackY, 13)
 
 def drawTrackButton():
-	global buttonCoord
+	global trackBCoords
 	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN // 4
 	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN // 2
 	canvas.create_rectangle(x1, y1, x2, y2, fill = "grey",
 		outline = "darkGreen")
 	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
 		text = "Change Track", fill = 'darkGreen')
-	buttonCoord = [x1, y1, x2, y2]
+	trackBCoords = [x1, y1, x2, y2]
+
+def drawDetectionButton():
+	global detBCoords
+	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN // 2
+	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN * 3 // 4
+	canvas.create_rectangle(x1, y1, x2, y2, fill = "grey",
+		outline = "DarkOrange3")
+	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
+		text = "Detection Radius", fill = 'DarkOrange3')
+	detBCoords = [x1, y1, x2, y2]
 
 def drawTimer():
 	timerLabel.place(x = CANVAS_WIDTH/2 - MARGIN, y = MARGIN // 3 * 2)
 	loopLabel.place(x = CANVAS_WIDTH/2 + MARGIN, y = MARGIN // 3 * 2)
 
 def changeTrack(x, y):
-	global buttonCoord, TWO_LANE
-	[x1, y1, x2, y2] = buttonCoord
+	global trackBCoords, TWO_LANE
+	[x1, y1, x2, y2] = trackBCoords
 	if (x > x1 and x < x2 and y > y1 and y < y2):
 		TWO_LANE = not TWO_LANE
 		reset()
+
+def addDetectionRadius(x, y):
+	global detBCoords, detectionRadius
+	[x1, y1, x2, y2] = detBCoords
+	if (x > x1 and x < x2 and y > y1 and y < y2):
+		detectionRadius = not detectionRadius
+		for v in vehicles:
+			if (detectionRadius): 
+				canvas.itemconfig(v.getDetRadCanvas(), state = tk.NORMAL)
+			else: canvas.itemconfig(v.getDetRadCanvas(), state = tk.HIDDEN)
 
 def reset():
 	global vehicles, totalLoops, mode
@@ -237,6 +289,7 @@ def reset():
 	infoLabel.configure(text = "")
 	loopLabel.configure(text = str(totalLoops))
 	drawTrackButton()
+	drawDetectionButton()
 	drawTimer()
 	pickTrack()
 

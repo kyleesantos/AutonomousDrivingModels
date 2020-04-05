@@ -29,6 +29,7 @@ class Vehicle:
     self.passingIntersection = False
     self.acceleration = 0
     self.optAngSpeed = direc * toAngular(idm.OPT_VELOCITY, r)
+    self.canvas = []
     self._createVehicle(vehX, vehY)
 
 
@@ -246,3 +247,21 @@ class Vehicle:
 
   def getLooped(self):
     return self.looped
+
+  def getVehicleCanvas(self):
+    return self.canvas[0]
+
+  def getWheelsCanvas(self):
+    return self.canvas[1]
+
+  def getDirCanvas(self):
+    return self.canvas[2]
+
+  def getIDCanvas(self):
+    return self.canvas[3]
+
+  def getDetRadCanvas(self):
+    return self.canvas[4]
+
+  def setCanvas(self, canvas):
+    self.canvas = canvas
