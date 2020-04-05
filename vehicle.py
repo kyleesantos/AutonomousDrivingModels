@@ -4,8 +4,8 @@ from util import *
 
 OUTER = 1
 INNER = -1
-VEH_WIDTH = 25 # half of vehicle width
-VEH_LENGTH = 50 # half of vehicle height
+VEH_WIDTH = SCALE # half of vehicle width
+VEH_LENGTH = 2 * SCALE # half of vehicle height
 WHE_WIDTH = 5 # half of wheel width
 WHE_LENGTH = 15 # half of wheel length
 
@@ -15,7 +15,7 @@ class Vehicle:
   # Use (x,y) of center of the vehicle's bounding box
   # angle in radians
   def __init__(self, trackX, trackY, r, theta, direc, idNum):
-    self.angSpeed = direc  # deg/s
+    self.angSpeed = direc * toAngular(idm.OPT_VELOCITY, r) # deg/s
     self.trackX = trackX
     self.trackY = trackY
     self.r = r
@@ -60,8 +60,8 @@ class Vehicle:
       self.wheelAngles.append(self._getAngles(self.wheelPoints[i], self.wheelRadii[i]))
 
     # triangle direction marker
-    self.dirPoints = [(vehX, vehY - (self.direc * VEH_LENGTH//6)), 
-      (vehX - VEH_WIDTH //2, vehY + (self.direc * VEH_LENGTH//6)), 
+    self.dirPoints = [(vehX, vehY - (self.direc * VEH_LENGTH//6)),
+      (vehX - VEH_WIDTH //2, vehY + (self.direc * VEH_LENGTH//6)),
       (vehX + VEH_WIDTH //2, vehY + (self.direc * VEH_LENGTH//6))]
     self.dirRadii = self._getRadii(self.dirPoints)
     self.dirAngles = self._getAngles(self.dirPoints, self.dirRadii)
@@ -122,7 +122,7 @@ class Vehicle:
     prev = self.theta % MAX_DEG
     self.theta = (self.theta + self.angSpeed) % MAX_DEG
     curr = self.theta % MAX_DEG
-    self.looped = (prev < (MAX_DEG // 2) and curr > (MAX_DEG // 2) and 
+    self.looped = (prev < (MAX_DEG // 2) and curr > (MAX_DEG // 2) and
       (not self.looped))
 
 
@@ -200,7 +200,7 @@ class Vehicle:
 
   def getAngSpeed(self):
     return self.angSpeed
-  
+
   def setAngSpeed(self, speed):
     self.angSpeed = speed
 
@@ -230,8 +230,11 @@ class Vehicle:
     return self.acceleration
 
   # takes in acceleration as linear
-  def setAcceleration(self, acceleration):
-    self.acceleration = toAngular(acceleration, self.r)
+  def setAcceleration(self, acceleration, angular=False):
+    if angular:
+      self.acceleration = acceleration
+    else:
+      self.acceleration = toAngular(acceleration, self.r)
 
   def increaseAngSpeed(self, amount):
     newSpeed = min(max(abs(self.angSpeed) + amount, 0), abs(self.optAngSpeed))

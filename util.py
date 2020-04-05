@@ -1,5 +1,7 @@
 import math
 
+SCALE = 25 # pixels/m
+
 # Track Parameters
 LEFT_ENTRANCE_THETA = 35
 RIGHT_ENTRANCE_THETA = 145
@@ -31,5 +33,5 @@ def vehiclesCollide(veh1, veh2):
         (veh1Max > veh2Min and veh1Max < veh2Max) or
         (veh2Min > veh1Min and veh2Min < veh1Max) or
         (veh2Max > veh1Min and veh2Max < veh1Max)) and
-        veh1.getDirection() == veh2.getDirection() and 
+        veh1.getDirection() == veh2.getDirection() and
         veh1.getRadius() == veh2.getRadius())

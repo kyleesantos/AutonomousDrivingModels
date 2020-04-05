@@ -2,6 +2,19 @@ import math
 import numpy as np
 import random
 from util import *
+import idm
+
+# vehicles with less than this arc distance to intersection are considered as 'approaching' intersection
+REAL_NEAR_INTER_THRESH = 24
+
+# vehicles with less than this arc distance to intersection are considerted to be 'at' intersection
+REAL_AT_INTER_THRESH = 6
+REAL_MAX_CAR_SEPARATION = 10
+MAX_PASSING_CARS = 3
+
+NEAR_INTER_THRESH = SCALE * REAL_NEAR_INTER_THRESH
+AT_INTER_THRESH = SCALE * REAL_AT_INTER_THRESH
+MAX_CAR_SEPARATION = SCALE * REAL_MAX_CAR_SEPARATION
 
 class Env():
 	# Coop_Env houses stats/data on the current state of the environment. initialize NON_COOP OR COOP mode depending on desired control mechanism
@@ -10,16 +23,15 @@ class Env():
 		self.track_config = track_config
 		self.mode = mode
 		self.intersection = None # should be set by setIntersection if track_config is figure_8
-		self.nearIntersectionThreshold = 600 # vehicles with less than this arc distance to intersection are considered as 'approaching' intersection
-		self.atIntersectionThreshold = 150 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersectioin
+		self.nearIntersectionThreshold = NEAR_INTER_THRESH
+		self.atIntersectionThreshold = AT_INTER_THRESH
 		self.pendingLeft = 0 # number of vehicles pending from left side
 		self.pendingRight = 0 # number of vehicles pending from right side
 		self.passingVehicle = None # vehicle currently passing through intersection
 		self.weights = None
-		self.maxPassingCars = 3
+		self.maxPassingCars = MAX_PASSING_CARS
 		self.vehiclesAtIntersection = None
-		self.bufferDistance = 150 # buffer distance between any two cars (should be set appropriately)
-		self.maxCarSeparation = 250
+		self.maxCarSeparation = MAX_CAR_SEPARATION
 		self.decision = None # decision is a list of 'decisions' where a decision is a tuple indicating a side and number of cars to let through
 		self.lastPassingVehicle = None
 		self.vehicles = None
@@ -49,21 +61,21 @@ class Env():
 		return (arcAngle / MAX_DEG) * circumference
 
 
-	# gets the euclidean distance of a vehicle to the intersection 
+	# gets the euclidean distance of a vehicle to the intersection
 	def getDistanceToIntersection(self, vehicle):
 		posX, posY = vehicle.getPos()
 		intersectionX, intersectionY = self.intersection
 
 		return math.sqrt((intersectionX - posX)**2 + (intersectionY - posY)**2)
 
-	# returns a feature vector from the given vehicle to use in 
+	# returns a feature vector from the given vehicle to use in
 	# determining the vehicle to pass through intersection
 	def getFeatureVector(self, vehicle):
 		if (vehicle.getDirection() == CLK): pendingCount = self.pendingLeft
-		else: pendingCount = self.pendingRight 
+		else: pendingCount = self.pendingRight
 		return np.array([1/self.getDistanceToIntersection(vehicle), pendingCount])
 
-	# returns the length of the longest continuous string of cars that are 
+	# returns the length of the longest continuous string of cars that are
 	# each within a certain distance from each other, starting from the first car
 	def getNumCarsInString(self, distances):
 		if len(distances) == 0: return 0
@@ -75,7 +87,33 @@ class Env():
 				count += 1
 		return count
 
-	# assings a score to the left and right sides of the track, indicating priority when choosing 
+
+	def getChainsOfCars(self, vehiclesDistances, following=False):
+		if len(vehiclesDistances) == 0:
+			return []
+
+		allChains = []
+		currChain = [vehiclesDistances[0][0]]
+		for i in range(1,len(vehiclesDistances)):
+			separation = vehiclesDistances[i][1] - vehiclesDistances[i - 1][1]
+			if separation > self.maxCarSeparation:
+				allChains.append(currChain)
+				currChain = [vehiclesDistances[i][0]]
+			else:
+				currChain.append(vehiclesDistances[i][0])
+		if (following and len(allChains) > 0 and
+			allChains[0][0].getDirection() == self.getRightOfWay()):
+			lastDist = self.getArcDistance(allChains[0][0], car2=currChain[-1])
+			if lastDist < self.maxCarSeparation:
+				allChains[0] = currChain + allChains[0]
+			else:
+				allChains.append(currChain)
+		else:
+			allChains.append(currChain)
+		return allChains
+
+
+	# assings a score to the left and right sides of the track, indicating priority when choosing
 	# which lane to 'open' at the intersection
 	def getSideScore(self, tup):
 		vehicleAtIntersection, numCars, distances = tup
@@ -100,13 +138,30 @@ class Env():
 
 		for vehicle in self.vehicles:
 			if vehicle.getDirection() == CLK:
-				arcDistance = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
+				arcDistance = self.getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
 				if (arcDistance < self.nearIntersectionThreshold):
 					leftVehicles.append((vehicle, arcDistance))
 			else:
-				arcDistance = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
+				arcDistance = self.getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if (arcDistance < self.nearIntersectionThreshold):
 					rightVehicles.append((vehicle, arcDistance))
+
+		leftVehicles.sort(key=lambda tup: tup[1])
+		rightVehicles.sort(key=lambda tup: tup[1])
+
+		return leftVehicles, rightVehicles
+
+	def getDistancesPerLane(self):
+		leftVehicles = []
+		rightVehicles = []
+
+		for vehicle in self.vehicles:
+			if vehicle.getDirection() == CLK:
+				arcDistance = self.getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
+				leftVehicles.append((vehicle, arcDistance))
+			else:
+				arcDistance = self.getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
+				rightVehicles.append((vehicle, arcDistance))
 
 		leftVehicles.sort(key=lambda tup: tup[1])
 		rightVehicles.sort(key=lambda tup: tup[1])
@@ -146,7 +201,7 @@ class Env():
 		if self.mode == NON_COOP:
 			numLeft = 1
 			numRight = 1
-		elif self.mode == COOP:	
+		elif self.mode == COOP:
 			numLeft = self.getNumCarsInString(leftDistances)
 			numRight = self.getNumCarsInString(rightDistances)
 
@@ -181,7 +236,7 @@ class Env():
 		numCars = self.decision[0][1]
 
 		if side == CLK: passingVehicles = leftVehicles
-		else: passingVehicles = rightVehicles 
+		else: passingVehicles = rightVehicles
 
 		for i in range(numCars):
 			vehicle = passingVehicles[i][0]
@@ -189,7 +244,7 @@ class Env():
 			if (i == numCars-1):
 				self.lastPassingVehicle = vehicle
 
-	# updates environment state and makes decision on vehicles to pass through the intersection 
+	# updates environment state and makes decision on vehicles to pass through the intersection
 	def step(self, vehicles):
 		self.vehicles = vehicles
 
@@ -213,14 +268,27 @@ class Env():
 						self.decision[0] = self.decision[1]
 						self.decision[1] = None
 						if (self.decision[0] is None): self.decision = None
-						else: 
+						else:
 							self.distributeDecision()
-		
+
+		if self.mode == COOP:
+			leftDistances, rightDistances = self.getDistancesPerLane()
+			chains = (self.getChainsOfCars(leftDistances, following=True) +
+						self.getChainsOfCars(rightDistances, following=True))
+			leadingCars = [chain[0] for chain in chains]
+			idm.updateAccels(leadingCars, self.getRightOfWay())
+			for (i,chain) in enumerate(chains):
+				accel = leadingCars[i].getAcceleration()
+				for vehicle in chain:
+					vehicle.setAcceleration(accel, angular=True)
+		else:
+			idm.updateAccels(vehicles, self.getRightOfWay())
+
 
 	def getRightOfWay(self):
 		if self.decision:
 			return self.decision[0][0]
-		
+
 		return NEUTRAL
 
 	# use this to set the center of the intersection point if track_config is figure_8

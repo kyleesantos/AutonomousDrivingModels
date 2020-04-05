@@ -2,8 +2,6 @@ import math
 import vehicle
 from util import *
 
-SCALE = 25 # pixels/m
-
 # Intelligent Driver Model Parameters
 REAL_OPT_VELOCITY = 0.3  # m/s
 REAL_MAX_ACCEL = 0.1     # m/s2
@@ -20,7 +18,7 @@ TIME_HEADWAY = 1.5    # s
 ACCEL_EXP = 4
 
 # Information Constraints Parameters
-DETECTION_DIST = SCALE * REAL_DETECTION_DIST  # m
+DETECTION_DIST = SCALE * REAL_DETECTION_DIST  # pixels
 
 
 def calculateAccel(dist, v, delta_v):
@@ -76,7 +74,6 @@ def findClosestObstacleAhead(vehicle1, vehicles, rightOfWay):
 
 
 def updateAccels(vehicles, rightOfWay):
-  new_accels = []
   for vehicle1 in vehicles:
     # enforce information constraints
     nearby_vehicles = findNearestOnPath(vehicle1, vehicles)
@@ -89,8 +86,3 @@ def updateAccels(vehicles, rightOfWay):
       vehicle1.setAcceleration(new_accel)
     else:
       vehicle1.setAcceleration(MAX_ACCEL)
-
-  # for accel,vehicle in zip(new_accels,vehicles):
-  #   vehicle.setAcceleration(accel)
-
-# if __name__ == "__main__":

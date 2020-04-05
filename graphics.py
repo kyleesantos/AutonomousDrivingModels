@@ -3,7 +3,7 @@ import tkinter as tk
 import itertools, math, time
 import numpy as np
 
-from cooperativePlanning import Env
+from pathPlanning import Env
 from tkinter import *
 from util import *
 import vehicle
@@ -42,12 +42,7 @@ move = False
 vehicles = []
 totalLoops = 0
 textSpace = 20
-mode = NON_COOP
-
-env = Env(mode=mode)
-env.setIntersection((601, 367))  # y was 397 initially
-#coop_env.setIntersectionThreshold(159) # threshold was 194 initially
-env.setWeights(np.array([1,1]))
+mode = COOP
 
 def initEnv():
 	global env
@@ -97,7 +92,7 @@ def inTrack(x, y):
 
 	# Check for 2 lane track first
 	r = math.sqrt((tX - x)**2 + (tY - y)**2)
-	if (TWO_LANE and ((r <= outR and r >= (outR - TRACK_WIDTH)) or 
+	if (TWO_LANE and ((r <= outR and r >= (outR - TRACK_WIDTH)) or
 			(r <= outR + TRACK_WIDTH and r >= outR))): return (r, CLK)
 	elif (r <= outR and r >= (outR - TRACK_WIDTH)): return (r, direc)
 	return (None, None)
@@ -118,7 +113,7 @@ def makeVehicle(theta, direc, r):
 	global info, vehR
 	# Add Vehicle
 	radius = vehR
-	if (TWO_LANE): 
+	if (TWO_LANE):
 		tX = trackX
 		if (r <= outR + TRACK_WIDTH and r >= outR): radius += TRACK_WIDTH
 	elif (direc == CTR_CLK): tX = trackRightX
@@ -146,7 +141,6 @@ def vehiclesMove():
 	if move:
 		cars = [vehicle[0] for vehicle in vehicles]
 		env.step(cars)
-		idm.updateAccels(cars, env.getRightOfWay())
 		for v, vehCanvas, wheelsCanvas, dirCanvas, idCanvas in vehicles:
 			v.update()
 			if (v.getLooped()): totalLoops += 1
@@ -176,7 +170,7 @@ def figure8Track():
 
 	# Checkered finish line
 	drawFinishLine(CANVAS_WIDTH // 2 - (TRACK_WIDTH // 2), trackY, 13)
-	canvas.create_oval(trackRightX - inR, trackY - inR, trackRightX + inR, 
+	canvas.create_oval(trackRightX - inR, trackY - inR, trackRightX + inR,
 		trackY + inR, fill = 'white', outline = "")
 
 def drawFinishLine(x, y, blocks):
@@ -225,7 +219,7 @@ def reset():
 	if (mode == NON_COOP): modeName = "NON-COOPERATIVE"
 	else: modeName = "COOPERATIVE"
 	totalLoops = 0
-	
+
 	initEnv()
 	canvas.delete("all")
 	# Add title and car information at top and bottom of screen
