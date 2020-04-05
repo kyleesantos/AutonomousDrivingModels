@@ -43,7 +43,7 @@ vehicles = []
 totalLoops = 0
 textSpace = 20
 
-env = Env(mode=NON_COOP)
+env = Env(mode=COOP)
 env.setIntersection((601, 367))  # y was 397 initially
 #coop_env.setIntersectionThreshold(159) # threshold was 194 initially
 env.setWeights(np.array([1,1]))
@@ -216,6 +216,7 @@ def changeTrack(x, y):
 def reset():
 	global vehicles, totalLoops
 	totalLoops = 0
+	
 	canvas.delete("all")
 	# Add title and car information at top and bottom of screen
 	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 10,
