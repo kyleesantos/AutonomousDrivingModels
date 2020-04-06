@@ -70,6 +70,7 @@ def findClosestObstacleAhead(vehicle1, vehicles):
         closest_speed = vehicles[i].getAngSpeed()
       else:
         closest_speed = 0
+
   return closest_speed, closest_diff
 
 

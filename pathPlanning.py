@@ -264,7 +264,6 @@ class Env():
 				if ((posY > self.intersection[1]) and (distToIntersection > self.nearIntersectionThreshold)):
 					vehicle.setPassingIntersection(passing=False)
 					if (self.lastPassingVehicle == vehicle):
-						print("vehicle has passed intersection")
 						self.lastPassingVehicle = None
 						self.decision[0] = self.decision[1]
 						self.decision[1] = None
