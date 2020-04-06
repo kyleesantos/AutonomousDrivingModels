@@ -256,6 +256,7 @@ class Env():
 
 		for vehicle in vehicles:
 			if (vehicle.isPassingIntersection()):
+				#print("vehicle ", vehicle.getID(), " can pass intersection")
 				posY = vehicle.getPos()[1]
 				if (vehicle.getDirection() == CLK):
 					distToIntersection = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
@@ -277,11 +278,11 @@ class Env():
 						self.getChainsOfCars(rightDistances, following=True))
 			leadingCars = [chain[0] for chain in chains]
 			idm.updateAccels(vehicles)
-			for (i,chain) in enumerate(chains):
-				leadingAccel = leadingCars[i].getAcceleration()
-				for vehicle in chain:
-					tempAccel = vehicle.getAcceleration()
-					vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
+			#for (i,chain) in enumerate(chains):
+			#	leadingAccel = leadingCars[i].getAcceleration()
+			#	for vehicle in chain:
+			#		tempAccel = vehicle.getAcceleration()
+			#		vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
 		else:
 			idm.updateAccels(vehicles)
 

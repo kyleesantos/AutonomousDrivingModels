@@ -1,6 +1,6 @@
 import math
 
-SCALE = 15 # pixels/m
+SCALE = 25 # pixels/m
 
 # Track Parameters
 LEFT_ENTRANCE_THETA = 35
