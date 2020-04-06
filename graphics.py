@@ -36,7 +36,9 @@ timerCounter = None
 timerLabel = Label(text = "0.0 s", fg = "red")
 infoLabel = Label(text = "")
 loopLabel = Label(text = "0", fg = "darkBlue")
-trackBCoords, detBCoords = [], []
+modeLabel = Label(text = "", fg = "DarkOrchid4")
+trackBCoords, detBCoords, modeBCoords = [], [], []
+
 move = False
 testing, testingTime = False, 5.0
 testList = [(0, CLK), (0, CTR_CLK)] # degrees, direction
@@ -83,10 +85,16 @@ def mousePress(event):
 	x, y = event.x, event.y
 	changeTrack(x, y)
 	addDetectionRadius(x, y)
+	changeMode(x, y)
 	r, direc = inTrack(x, y)
 	if (r != None):
 		theta = placeOnTrack(x, y, direc, r)
 		makeVehicle(theta, direc, r)
+
+def modeName():
+	global mode
+	if (mode == COOP): return "Cooperative"
+	return "Non-Cooperative"
 
 def inTrack(x, y):
 	global vehR
@@ -143,6 +151,8 @@ def makeVehicle(theta, direc, r):
 	detCanvas = canvas.create_oval(v.getX() - idm.DETECTION_DIST, 
 		v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST, 
 		v.getY() + idm.DETECTION_DIST, outline = "DarkOrange2")
+	if (detectionRadius): canvas.itemconfig(detCanvas, state = tk.NORMAL)
+	else: canvas.itemconfig(detCanvas, state = tk.HIDDEN)
 	v.setCanvas([vehCanvas, wheelsCanvas, dirCanvas, idCanvas, detCanvas])
 	vehicles.append(v)
 	infoLabel.configure(text = infoListToText())
@@ -182,12 +192,10 @@ def stopTesting():
 	if (timerCounter != None and testing and 
 		(time.time() - timerCounter) >= testingTime):
 		move = False
-		if (mode == NON_COOP): modeName = "NON-COOPERATIVE"
-		else: modeName = "COOPERATIVE"
-		print(modeName, totalLoops)
+		print(modeName(), totalLoops)
 		if (mode == NON_COOP):
 			root.after(1000, testCase(COOP))
-		testing = False
+		else: testing = False
 
 
 def drawTrack(x, y, outR, inR):
@@ -230,8 +238,7 @@ def drawTrackButton():
 	global trackBCoords
 	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN // 4
 	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN // 2
-	canvas.create_rectangle(x1, y1, x2, y2, fill = "grey",
-		outline = "darkGreen")
+	canvas.create_rectangle(x1, y1, x2, y2, fill = "PaleGreen1")
 	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
 		text = "Change Track", fill = 'darkGreen')
 	trackBCoords = [x1, y1, x2, y2]
@@ -240,13 +247,23 @@ def drawDetectionButton():
 	global detBCoords
 	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN // 2
 	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN * 3 // 4
-	canvas.create_rectangle(x1, y1, x2, y2, fill = "grey",
-		outline = "DarkOrange3")
+	canvas.create_rectangle(x1, y1, x2, y2, fill = "tan1")
 	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
-		text = "Detection Radius", fill = 'DarkOrange3')
+		text = "Detection Radius", fill = 'OrangeRed4')
 	detBCoords = [x1, y1, x2, y2]
 
+def drawModeButton():
+	global modeBCoords
+	x1, y1 = CANVAS_WIDTH - 2 * MARGIN, MARGIN * 3 // 4
+	x2, y2 = CANVAS_WIDTH - MARGIN // 2, MARGIN
+	canvas.create_rectangle(x1, y1, x2, y2, fill = "plum1")
+	canvas.create_text((x1 + x2) // 2, (y1 + y2) // 2,
+		text = "Mode", fill = 'DarkOrchid4')
+	modeBCoords = [x1, y1, x2, y2]
+
 def drawTimer():
+	global loopLabel, timerLabel
+	loopLabel.configure(text = str(totalLoops))
 	timerLabel.place(x = CANVAS_WIDTH/2 - MARGIN, y = MARGIN // 3 * 2)
 	loopLabel.place(x = CANVAS_WIDTH/2 + MARGIN, y = MARGIN // 3 * 2)
 
@@ -267,10 +284,16 @@ def addDetectionRadius(x, y):
 				canvas.itemconfig(v.getDetRadCanvas(), state = tk.NORMAL)
 			else: canvas.itemconfig(v.getDetRadCanvas(), state = tk.HIDDEN)
 
+def changeMode(x, y):
+	global mode, modeBCoords, move
+	[x1, y1, x2, y2] = modeBCoords
+	if (x > x1 and x < x2 and y > y1 and y < y2):
+		if (mode == NON_COOP): mode = COOP
+		else: mode = NON_COOP
+		modeLabel.configure(text = modeName())
+
 def reset():
 	global vehicles, totalLoops, mode
-	if (mode == NON_COOP): modeName = "NON-COOPERATIVE"
-	else: modeName = "COOPERATIVE"
 	totalLoops = 0
 
 	initEnv()
@@ -278,8 +301,6 @@ def reset():
 	# Add title and car information at top and bottom of screen
 	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 10,
 		text='      Cooperative vs Non-Cooperative Autonomous Driving')
-	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 3,
-		text= modeName)
 	canvas.create_text(CANVAS_WIDTH/2 - MARGIN * 5 // 6, MARGIN // 2,
 		text='Timer:', fill = 'red')
 	canvas.create_text(CANVAS_WIDTH/2 + MARGIN, MARGIN // 2,
@@ -288,9 +309,11 @@ def reset():
 
 	infoLabel.place(x = MARGIN // 9, y = MARGIN // 9)
 	infoLabel.configure(text = "")
-	loopLabel.configure(text = str(totalLoops))
+	modeLabel.place(x = CANVAS_WIDTH / 2 - MARGIN // 3, y = MARGIN // 5)
+	modeLabel.configure(text = modeName())
 	drawTrackButton()
 	drawDetectionButton()
+	drawModeButton()
 	drawTimer()
 	pickTrack()
 
