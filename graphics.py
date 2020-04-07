@@ -195,6 +195,7 @@ def stopTesting():
 		print(modeName(), totalLoops)
 		if (mode == NON_COOP):
 			root.after(1000, testCase(COOP))
+			timerCounter = time.time()
 		else: testing = False
 
 
