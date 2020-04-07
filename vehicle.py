@@ -221,8 +221,9 @@ class Vehicle:
   def getDirPoints(self):
     return self.dirPoints
 
-  def getAngleBounds(self):
-    return [self.wheelAngles[0][0], self.wheelAngles[1][1]]
+  def getCarAngle(self):
+    r = (self.r * 1.0) - VEH_WIDTH - WHE_WIDTH
+    return toDegrees((VEH_LENGTH * 2 + WHE_LENGTH * 2) / r)
 
   def getTrack(self):
     return (self.trackX, self.trackY)

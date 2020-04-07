@@ -27,11 +27,8 @@ def toLinear(angSpeed, radius):
   return (angSpeed / MAX_DEG) * MAX_RAD * radius
 
 def vehiclesCollide(veh1, veh2):
-    veh1Min, veh1Max = min(veh1.getAngleBounds()), max(veh1.getAngleBounds())
-    veh2Min, veh2Max = min(veh2.getAngleBounds()), max(veh2.getAngleBounds())
-    return (((veh1Min > veh2Min and veh1Min < veh2Max) or
-        (veh1Max > veh2Min and veh1Max < veh2Max) or
-        (veh2Min > veh1Min and veh2Min < veh1Max) or
-        (veh2Max > veh1Min and veh2Max < veh1Max)) and
-        veh1.getDirection() == veh2.getDirection() and
-        veh1.getRadius() == veh2.getRadius())
+  ang1, ang2 = veh1.getTheta() % MAX_DEG, veh2.getTheta() % MAX_DEG
+  diff = abs(ang1 - ang2)
+  return (veh1.getDirection() == veh2.getDirection() and 
+    veh1.getRadius() == veh2.getRadius() and
+    (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
