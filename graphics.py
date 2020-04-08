@@ -40,8 +40,9 @@ modeLabel = Label(text = "", fg = "DarkOrchid4")
 trackBCoords, detBCoords, modeBCoords = [], [], []
 
 move = False
-testing, testingTime = False, 5.0
-testList = [(0, CLK), (0, CTR_CLK)] # degrees, direction
+testing, testTime = False, 5.0
+testList, testLists = [], [] # degrees, direction
+testResults = []
 vehicles = []
 detectionRadius = False
 totalLoops = 0
@@ -64,7 +65,7 @@ def testCase(m):
 	move, testing = True, True
 
 def keyPress(event):
-	global move, timerCounter
+	global move, timerCounter, testList, testLists
 	if (event.char == "s"):
 		if timerCounter == None: timerCounter = time.time()
 		move = not move
@@ -73,7 +74,9 @@ def keyPress(event):
 		timerLabel.config(text = "0.0 s")
 		reset()
 	if (event.char == "t"):
-		testCase(NON_COOP)
+		for t in testLists:
+			testList = t
+			testCase(NON_COOP)
 	if (event.char == "1"):
 		for v in vehicles:
 			v.increaseAngSpeed(1)
@@ -188,15 +191,19 @@ def vehiclesMove():
 	root.after(10, vehiclesMove)
 
 def stopTesting():
-	global testing, timerCounter, testingTime, move, mode
+	global testing, timerCounter, testTime, move, mode, testResults
 	if (timerCounter != None and testing and 
-		(time.time() - timerCounter) >= testingTime):
+		(time.time() - timerCounter) >= testTime):
 		move = False
 		print(modeName(), totalLoops)
 		if (mode == NON_COOP):
+			testResults.append((totalLoops, None, None))
 			root.after(1000, testCase(COOP))
 			timerCounter = time.time()
-		else: testing = False
+		else:
+			testResults[len(testResults) - 1] = (testResults[len(testResults) - 1][0], 
+				totalLoops, testTime)
+			testing = False
 
 
 def drawTrack(x, y, outR, inR):
@@ -324,8 +331,11 @@ def pickTrack():
 	else:
 		figure8Track()
 
+def runGraphics(tFlag, tLists, tTime):
+	global testTime, testLists, testResults
+	testTime, testLists = tTime, tLists
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 	reset()
 	drawTrackButton()
 
@@ -336,3 +346,7 @@ if __name__ == "__main__":
 	root.bind("<Key>", keyPress)
 	root.bind("<Button-1>", mousePress)
 	root.mainloop()
+	return testResults
+
+print(runGraphics(True, [[(0, CLK), (0, CTR_CLK)], [(90, CLK)]], 5.0))
+
