@@ -27,6 +27,7 @@ class Vehicle:
     self.id = idNum
     self.pending = False
     self.passingIntersection = False
+    self.inCriticalSection = False
     self.acceleration = 0
     self.optAngSpeed = direc * toAngular(idm.OPT_VELOCITY, r)
     self.canvas = []
@@ -183,6 +184,12 @@ class Vehicle:
 
   def setPassingIntersection(self, passing=True):
     self.passingIntersection = passing
+
+  def isInCriticalSection(self):
+    return self.inCriticalSection
+
+  def setInCriticalSection(self, val):
+    self.inCriticalSection = val
 
   def getX(self):
     return self.trackX + math.cos(toRadians(self.theta)) * self.r

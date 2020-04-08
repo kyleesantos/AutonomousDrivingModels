@@ -132,6 +132,7 @@ class Env():
 
 	# returns the vehicles approaching the intersection from both lanes, along with their distances to intersection
 	# returns the vehicles sorted by distance to intersection
+	# returns vehicles and their distance to the intersection
 	def getVehiclesApproachingIntersection(self):
 		leftVehicles = []
 		rightVehicles = []
@@ -193,6 +194,7 @@ class Env():
 
 		# get number of vehicles close to intersection at both lanes
 		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
+
 		leftDistances = [tup[1] for tup in leftVehicles]
 		rightDistances = [tup[1] for tup in rightVehicles]
 
@@ -229,6 +231,17 @@ class Env():
 			else:
 				return [rightDecision, leftDecision]
 
+	def setVehiclesInCriticalSection(self):
+		# get vehicles close to intersection at both lanes
+		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
+
+		# vehicles are in critical section (i.e it is approaching the intersection or passing through the intersection)
+		approachingVehicles = [tup[0] for tup in leftVehicles] + [tup[0] for tup in rightVehicles]
+		for vehicle in approachingVehicles:
+			if (not vehicle.isInCriticalSection()) :
+				vehicle.setInCriticalSection(True)
+
+
 	def distributeDecision(self):
 		#leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
 		leftVehicles, rightVehicles = self.vehiclesApproachingIntersection
@@ -254,9 +267,10 @@ class Env():
 			if (self.decision):
 				self.distributeDecision()
 
+		self.setVehiclesInCriticalSection()
+
 		for vehicle in vehicles:
 			if (vehicle.isPassingIntersection()):
-				#print("vehicle ", vehicle.getID(), " can pass intersection")
 				posY = vehicle.getPos()[1]
 				if (vehicle.getDirection() == CLK):
 					distToIntersection = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
@@ -264,6 +278,7 @@ class Env():
 					distToIntersection = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if ((posY > self.intersection[1]) and (distToIntersection > self.nearIntersectionThreshold)):
 					vehicle.setPassingIntersection(passing=False)
+					vehicle.setInCriticalSection(False)
 					if (self.lastPassingVehicle == vehicle):
 						self.lastPassingVehicle = None
 						self.decision[0] = self.decision[1]
