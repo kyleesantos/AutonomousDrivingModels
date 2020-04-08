@@ -38,7 +38,7 @@ def main():
     if args.i and args.o:
         testList = parseInput(args.i)
         print(testList)
-        results = [(12,12,13), (14,15,16)]
+        #results = [(12,12,13), (14,15,16)]
         results = runGraphics(tFlag=True, tLists=testList)
         outputResults(results, args.o)
     else:

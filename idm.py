@@ -55,9 +55,11 @@ def findClosestObstacleAhead(vehicle1, vehicles):
   thetas = [veh.getTheta() for veh in vehicles]
   if not vehicle1.isPassingIntersection():
     if vehicle1.getDirection() == CTR_CLK:
-      thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
+      if (theta1 < RIGHT_ENTRANCE_THETA):
+        thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
     else:
-      thetas.append(LEFT_ENTRANCE_THETA - toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
+      if (theta1 > LEFT_ENTRANCE_THETA):
+        thetas.append(LEFT_ENTRANCE_THETA - toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
 
   for (i,theta2) in enumerate(thetas):
     if vehicle1.direc == CLK:
@@ -66,6 +68,7 @@ def findClosestObstacleAhead(vehicle1, vehicles):
       diff = theta2 - theta1 if theta2 > theta1 else theta2 + MAX_DEG - theta1
     if diff < closest_diff:
       closest_diff = diff
+      closest_theta = theta2
       if i < len(vehicles):
         closest_speed = vehicles[i].getAngSpeed()
       else:

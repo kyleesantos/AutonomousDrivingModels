@@ -121,6 +121,11 @@ class Env():
 		if ((len(distances) == 0) or (not vehicleAtIntersection)): return -1
 
 		minDist = distances[0]
+
+		# div by zero prevention
+		if (minDist == 0):
+			minDist = 0.25
+
 		vector = np.array([1/minDist, numCars])
 
 		if (self.mode == NON_COOP):
