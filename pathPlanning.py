@@ -17,7 +17,7 @@ AT_INTER_THRESH = SCALE * REAL_AT_INTER_THRESH
 MAX_CAR_SEPARATION = SCALE * REAL_MAX_CAR_SEPARATION
 
 class Env():
-	# Coop_Env houses stats/data on the current state of the environment. initialize NON_COOP OR COOP mode depending on desired control mechanism
+	# Env houses stats/data on the current state of the environment. initialize NON_COOP OR COOP mode depending on desired control mechanism
 
 	def __init__(self, track_config="figure_8", mode=NON_COOP):
 		self.track_config = track_config
@@ -60,20 +60,6 @@ class Env():
 
 		return (arcAngle / MAX_DEG) * circumference
 
-
-	# gets the euclidean distance of a vehicle to the intersection
-	def getDistanceToIntersection(self, vehicle):
-		posX, posY = vehicle.getPos()
-		intersectionX, intersectionY = self.intersection
-
-		return math.sqrt((intersectionX - posX)**2 + (intersectionY - posY)**2)
-
-	# returns a feature vector from the given vehicle to use in
-	# determining the vehicle to pass through intersection
-	def getFeatureVector(self, vehicle):
-		if (vehicle.getDirection() == CLK): pendingCount = self.pendingLeft
-		else: pendingCount = self.pendingRight
-		return np.array([1/self.getDistanceToIntersection(vehicle), pendingCount])
 
 	# returns the length of the longest continuous string of cars that are
 	# each within a certain distance from each other, starting from the first car
