@@ -1,4 +1,4 @@
-Non-Cooperative,Cooperative,Time
-5.0,7,7
-5.0,7,9
-5.0,7,7
+Time,Cooperative,Non-Cooperative
+60.0,86,90
+60.0,104,89
+60.0,99,79

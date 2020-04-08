@@ -3,7 +3,7 @@ import csv
 
 from graphics import runGraphics
 
-fields = ['Non-Cooperative', 'Cooperative', 'Time']
+fields = ['Time','Cooperative', 'Non-Cooperative']
 
 def getArgs():
     parser = argparse.ArgumentParser()
@@ -37,8 +37,6 @@ def main():
     args = getArgs()
     if args.i and args.o:
         testList = parseInput(args.i)
-        print(testList)
-        #results = [(12,12,13), (14,15,16)]
         results = runGraphics(tFlag=True, tLists=testList)
         outputResults(results, args.o)
     else:

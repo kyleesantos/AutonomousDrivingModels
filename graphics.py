@@ -72,8 +72,6 @@ def keyPress(event):
 		if timerCounter == None: timerCounter = time.time()
 		move = not move
 	if (event.char == "r"):
-		timerCounter = time.time()
-		timerLabel.config(text = "0.0 s")
 		reset()
 	if (event.char == "t"):
 		runTesting()
@@ -200,7 +198,7 @@ def runTesting():
 		move = False
 		return
 
-	mode = NON_COOP if i % 2 == 0 else COOP
+	mode = COOP if i % 2 == 0 else NON_COOP
 	reset()
 	for (theta, direc) in testLists[int(i)//2][1]:
 		makeVehicle(theta, direc, vehR)
@@ -215,7 +213,7 @@ def stopTesting():
 	if (timerCounter != None and (time.time() - timerCounter) >= testTime):
 		move = False
 		print(modeName(), totalLoops)
-		if (mode == NON_COOP):
+		if (mode == COOP):
 			firstLoops = totalLoops
 		else:
 			testResults.append((testTime, firstLoops, totalLoops))
@@ -319,13 +317,18 @@ def changeMode(x, y):
 		if (mode == NON_COOP): mode = COOP
 		else: mode = NON_COOP
 		modeLabel.configure(text = modeName())
+		move = False
+		reset()
 
 def reset():
-	global vehicles, totalLoops, mode
+	global vehicles, totalLoops, mode, timerCounter
 	totalLoops = 0
+	timerCounter = time.time()
+	timerLabel.config(text = "0.0 s")
 
 	initEnv()
 	canvas.delete("all")
+	canvas.delete("all")  # just in case lul
 	# Add title and car information at top and bottom of screen
 	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 10,
 		text='      Cooperative vs Non-Cooperative Autonomous Driving')
@@ -365,7 +368,7 @@ def validTests(tList):
 		veh.append(vehicle.Vehicle(getTrack(direc), trackY, vehR, theta, direc, -1))
 	for i in range(len(veh) - 1):
 		for j in range(i + 1, len(veh)):
-			if (vehiclesCollide(veh[i], veh[j]) or 
+			if (vehiclesCollide(veh[i], veh[j]) or
 				vehicleIntersectionCollide(veh[i], veh[j])): return False
 	return True
 
@@ -373,8 +376,7 @@ def validTests(tList):
 def runGraphics(tFlag=False, tLists=None):
 	global testLists, testResults
 	if tFlag:
-		testLists = filter(validTests, tLists)
-		print(testLists)
+		testLists = list(filter(validTests, tLists))
 		runTesting()
 		root.mainloop()
 		return testResults
