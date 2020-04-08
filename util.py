@@ -32,3 +32,21 @@ def vehiclesCollide(veh1, veh2):
   return (veh1.getDirection() == veh2.getDirection() and 
     veh1.getRadius() == veh2.getRadius() and
     (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
+
+def vehicleIntersectionCollide(veh1, veh2):
+  if (veh1.getDirection() == CLK): 
+    left = veh1
+    if (veh2.getDirection() == CLK): return False
+    right = veh2
+  else:
+    right = veh1
+    if (veh2.getDirection() == CTR_CLK): return False
+    left = veh2
+  angL, angR = left.getTheta() % MAX_DEG, right.getTheta() % MAX_DEG
+  diff = abs(180 - angL - angR)
+  temp = (veh1.getRadius() == veh2.getRadius() and angR >= RIGHT_ENTRANCE_THETA and
+    angR <= (MAX_DEG - RIGHT_ENTRANCE_THETA) and (angL <= LEFT_ENTRANCE_THETA or 
+    angL >= (MAX_DEG - LEFT_ENTRANCE_THETA)) and
+    (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
+  if temp: print("collide")
+  return temp
