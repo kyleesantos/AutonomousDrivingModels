@@ -183,6 +183,7 @@ class Env():
 					atRight = True
 
 		return atLeft, atRight
+
 	# makes a decision on which cars to let through the intersection
 	# returns none if no cars are at the intersection
 	def getNextDecision(self):
@@ -197,7 +198,6 @@ class Env():
 
 		leftDistances = [tup[1] for tup in leftVehicles]
 		rightDistances = [tup[1] for tup in rightVehicles]
-
 
 		# one person goes in non coop mode
 		if self.mode == NON_COOP:
@@ -293,11 +293,12 @@ class Env():
 						self.getChainsOfCars(rightDistances, following=True))
 			leadingCars = [chain[0] for chain in chains]
 			idm.updateAccels(vehicles)
-			#for (i,chain) in enumerate(chains):
-			#	leadingAccel = leadingCars[i].getAcceleration()
-			#	for vehicle in chain:
-			#		tempAccel = vehicle.getAcceleration()
-			#		vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
+			for (i,chain) in enumerate(chains):
+				leadingAccel = leadingCars[i].getAcceleration()
+				for vehicle in chain:
+					if vehicle.isPassingIntersection() or not vehicle.isInCriticalSection():
+						tempAccel = vehicle.getAcceleration()
+						vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
 		else:
 			idm.updateAccels(vehicles)
 

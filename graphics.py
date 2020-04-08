@@ -47,6 +47,7 @@ vehicles = []
 detectionRadius = False
 totalLoops = 0
 mode = COOP
+i = 0
 
 def initEnv():
 	global env
@@ -74,9 +75,8 @@ def keyPress(event):
 		timerLabel.config(text = "0.0 s")
 		reset()
 	if (event.char == "t"):
-		for t in testLists:
-			testList = t
-			testCase(NON_COOP)
+		runTesting()
+
 	if (event.char == "1"):
 		for v in vehicles:
 			v.increaseAngSpeed(1)
@@ -151,8 +151,8 @@ def makeVehicle(theta, direc, r):
 		wheelsCanvas.append(canvas.create_polygon(wP, fill='black'))
 	dirCanvas = canvas.create_polygon(v.getDirPoints(), fill = 'yellow')
 	idCanvas = canvas.create_text(v.getX(), v.getY(), text = str(v.getID()))
-	detCanvas = canvas.create_oval(v.getX() - idm.DETECTION_DIST, 
-		v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST, 
+	detCanvas = canvas.create_oval(v.getX() - idm.DETECTION_DIST,
+		v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST,
 		v.getY() + idm.DETECTION_DIST, outline = "DarkOrange2")
 	if (detectionRadius): canvas.itemconfig(detCanvas, state = tk.NORMAL)
 	else: canvas.itemconfig(detCanvas, state = tk.HIDDEN)
@@ -168,7 +168,7 @@ def infoListToText():
 	return txt
 
 def vehiclesMove():
-	global timerCounter, info, totalLoops
+	global timerCounter, info, totalLoops, testing
 	if move:
 		env.step(vehicles)
 		for v in vehicles:
@@ -182,28 +182,46 @@ def vehiclesMove():
 				canvas.coords(w, *flatten(wP))
 			canvas.coords(v.getDirCanvas(), *flatten(v.getDirPoints()))
 			canvas.coords(v.getIDCanvas(), v.getX(), v.getY())
-			canvas.coords(v.getDetRadCanvas(), v.getX() - idm.DETECTION_DIST, 
-				v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST, 
+			canvas.coords(v.getDetRadCanvas(), v.getX() - idm.DETECTION_DIST,
+				v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST,
 				v.getY() + idm.DETECTION_DIST)
 		timerLabel.config(text = "{0:.1f} s".format(round(time.time() - timerCounter, 1)))
 		loopLabel.config(text = totalLoops)
-		stopTesting()
-	root.after(10, vehiclesMove)
+		if testing:
+			stopTesting()
+	if not testing:
+		root.after(10, vehiclesMove)
+
+def runTesting():
+	global testLists, timerCounter, move, testing, mode, i, testTime
+	if i >= 2*len(testLists):
+		print('Done')
+		move = False
+		return
+
+	mode = NON_COOP if i % 2 == 0 else COOP
+	reset()
+	for (theta, direc) in testLists[int(i)//2][1]:
+		makeVehicle(theta, direc, vehR)
+	testTime = testLists[int(i)//2][0]
+	timerCounter = time.time()
+	move, testing = True, True
+	vehiclesMove()
 
 def stopTesting():
-	global testing, timerCounter, testTime, move, mode, testResults
-	if (timerCounter != None and testing and 
-		(time.time() - timerCounter) >= testTime):
+	global timerCounter, testTime, move, mode, testResults, firstLoops, i
+	if (timerCounter != None and (time.time() - timerCounter) >= testTime):
 		move = False
 		print(modeName(), totalLoops)
 		if (mode == NON_COOP):
-			testResults.append((totalLoops, None, None))
-			root.after(1000, testCase(COOP))
-			timerCounter = time.time()
+			firstLoops = totalLoops
 		else:
-			testResults[len(testResults) - 1] = (testResults[len(testResults) - 1][0], 
-				totalLoops, testTime)
-			testing = False
+			testResults.append((testTime, firstLoops, totalLoops))
+		i += 1
+		root.after(1000, runTesting())
+		timerCounter = time.time()
+	else:
+		root.after(10, vehiclesMove)
 
 
 def drawTrack(x, y, outR, inR):
@@ -288,7 +306,7 @@ def addDetectionRadius(x, y):
 	if (x > x1 and x < x2 and y > y1 and y < y2):
 		detectionRadius = not detectionRadius
 		for v in vehicles:
-			if (detectionRadius): 
+			if (detectionRadius):
 				canvas.itemconfig(v.getDetRadCanvas(), state = tk.NORMAL)
 			else: canvas.itemconfig(v.getDetRadCanvas(), state = tk.HIDDEN)
 
@@ -331,22 +349,21 @@ def pickTrack():
 	else:
 		figure8Track()
 
-def runGraphics(tFlag, tLists, tTime):
-	global testTime, testLists, testResults
-	testTime, testLists = tTime, tLists
+def runGraphics(tFlag=False, tLists=None):
+	global testLists, testResults
+	if tFlag:
+		testLists = tLists
+		runTesting()
+		root.mainloop()
+		return testResults
+	else:
+		reset()
+		drawTrackButton()
 
-# if __name__ == "__main__":
-	reset()
-	drawTrackButton()
+		# Pick track
+		pickTrack()
+		vehiclesMove()
 
-	# Pick track
-	pickTrack()
-	vehiclesMove()
-
-	root.bind("<Key>", keyPress)
-	root.bind("<Button-1>", mousePress)
-	root.mainloop()
-	return testResults
-
-print(runGraphics(True, [[(0, CLK), (0, CTR_CLK)], [(90, CLK)]], 5.0))
-
+		root.bind("<Key>", keyPress)
+		root.bind("<Button-1>", mousePress)
+		root.mainloop()
