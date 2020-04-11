@@ -224,7 +224,6 @@ class Env():
 
 	def setVehiclesInCriticalSection(self):
 		# get vehicles close to intersection at both lanes
-		leftVehicles, rightVehicles = self.getVehiclesApproachingIntersection()
 
 		# vehicles are in critical section (i.e it is approaching the intersection or passing through the intersection)
 		approachingVehicles = [tup[0] for tup in leftVehicles] + [tup[0] for tup in rightVehicles]
