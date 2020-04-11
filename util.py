@@ -5,6 +5,8 @@ SCALE = 25 # pixels/m
 # Track Parameters
 LEFT_ENTRANCE_THETA = 35
 RIGHT_ENTRANCE_THETA = 145
+LEFT_EXIT_THETA = 25
+RIGHT_EXIT_THETA = 155
 CTR_CLK = 1
 CLK = -1
 NEUTRAL = 0
@@ -29,6 +31,24 @@ def toLinear(angSpeed, radius):
 def vehiclesCollide(veh1, veh2):
   ang1, ang2 = veh1.getTheta() % MAX_DEG, veh2.getTheta() % MAX_DEG
   diff = abs(ang1 - ang2)
-  return (veh1.getDirection() == veh2.getDirection() and 
+  return (veh1.getDirection() == veh2.getDirection() and
     veh1.getRadius() == veh2.getRadius() and
     (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
+
+def vehicleIntersectionCollide(veh1, veh2):
+  if (veh1.getDirection() == CLK):
+    left = veh1
+    if (veh2.getDirection() == CLK): return False
+    right = veh2
+  else:
+    right = veh1
+    if (veh2.getDirection() == CTR_CLK): return False
+    left = veh2
+  angL, angR = left.getTheta() % MAX_DEG, right.getTheta() % MAX_DEG
+  diff = abs(180 - angL - angR)
+  temp = (veh1.getRadius() == veh2.getRadius() and angR >= RIGHT_ENTRANCE_THETA and
+    angR <= (MAX_DEG - RIGHT_ENTRANCE_THETA) and (angL <= LEFT_ENTRANCE_THETA or
+    angL >= (MAX_DEG - LEFT_ENTRANCE_THETA)) and
+    (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
+  if temp: print("collide")
+  return temp

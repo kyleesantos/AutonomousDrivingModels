@@ -10,11 +10,13 @@ REAL_NEAR_INTER_THRESH = 24
 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersection
 REAL_AT_INTER_THRESH = 6
 REAL_MAX_CAR_SEPARATION = 10
+REAL_CRITICAL_THRESH = 6
 MAX_PASSING_CARS = 3
 
 NEAR_INTER_THRESH = SCALE * REAL_NEAR_INTER_THRESH
 AT_INTER_THRESH = SCALE * REAL_AT_INTER_THRESH
 MAX_CAR_SEPARATION = SCALE * REAL_MAX_CAR_SEPARATION
+CRITICAL_THRESH = SCALE * REAL_CRITICAL_THRESH
 
 class Env():
 	# Env houses stats/data on the current state of the environment. initialize NON_COOP OR COOP mode depending on desired control mechanism
@@ -224,12 +226,15 @@ class Env():
 
 	def setVehiclesInCriticalSection(self):
 		# get vehicles close to intersection at both lanes
-
-		# vehicles are in critical section (i.e it is approaching the intersection or passing through the intersection)
-		approachingVehicles = [tup[0] for tup in leftVehicles] + [tup[0] for tup in rightVehicles]
-		for vehicle in approachingVehicles:
-			if (not vehicle.isInCriticalSection()) :
-				vehicle.setInCriticalSection(True)
+		for vehicle in self.vehicles:
+			if (vehicle.getDirection() == CLK):
+				arcDistance = self.getArcDistance(car1=vehicle, theta=LEFT_EXIT_THETA)
+				if (arcDistance < CRITICAL_THRESH):
+					vehicle.setInCriticalSection(True)
+			elif (vehicle.getDirection() == CTR_CLK):
+				arcDistance = self.getArcDistance(car1=vehicle, theta=RIGHT_EXIT_THETA)
+				if (arcDistance < CRITICAL_THRESH):
+					vehicle.setInCriticalSection(True)
 
 
 	def distributeDecision(self):
@@ -281,14 +286,18 @@ class Env():
 			leftDistances, rightDistances = self.getDistancesPerLane()
 			chains = (self.getChainsOfCars(leftDistances, following=True) +
 						self.getChainsOfCars(rightDistances, following=True))
-			leadingCars = [chain[0] for chain in chains]
 			idm.updateAccels(vehicles)
-			for (i,chain) in enumerate(chains):
-				leadingAccel = leadingCars[i].getAcceleration()
-				for vehicle in chain:
+			for chain in chains:
+				leadingAccel = chain[0].getAcceleration()
+				for (i,vehicle) in enumerate(chain):
+					tempAccel = vehicle.getAcceleration()
 					if vehicle.isPassingIntersection() or not vehicle.isInCriticalSection():
-						tempAccel = vehicle.getAcceleration()
 						vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
+					else:
+						for j in range(i+1,len(chain)):
+							currAccel = chain[j].getAcceleration()
+							chain[j].setAcceleration(max(tempAccel, currAccel), angular=True)
+						break
 		else:
 			idm.updateAccels(vehicles)
 

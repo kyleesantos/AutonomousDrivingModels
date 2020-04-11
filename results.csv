@@ -1,1 +1,8 @@
+<<<<<<< HEAD
 Non-Cooperative,Cooperative,Time
+=======
+Time,Cooperative,Non-Cooperative
+60.0,86,90
+60.0,104,89
+60.0,99,79
+>>>>>>> 4447fe16aa09294024377e1dc037eb8aaf3e3552

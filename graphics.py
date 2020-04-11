@@ -37,6 +37,7 @@ timerLabel = Label(text = "0.0 s", fg = "red")
 infoLabel = Label(text = "")
 loopLabel = Label(text = "0", fg = "darkBlue")
 modeLabel = Label(text = "", fg = "DarkOrchid4")
+testLabel = Label(text = "")
 trackBCoords, detBCoords, modeBCoords = [], [], []
 
 move = False
@@ -71,12 +72,9 @@ def keyPress(event):
 		if timerCounter == None: timerCounter = time.time()
 		move = not move
 	if (event.char == "r"):
-		timerCounter = time.time()
-		timerLabel.config(text = "0.0 s")
 		reset()
 	if (event.char == "t"):
 		runTesting()
-
 	if (event.char == "1"):
 		for v in vehicles:
 			v.increaseAngSpeed(1)
@@ -113,6 +111,7 @@ def inTrack(x, y):
 		if (y1 > 0): a = (a * -1.0) % MAX_DEG
 		if (TWO_LANE and r > outR): tR += TRACK_WIDTH
 		checkV = vehicle.Vehicle(tX, tY, tR, a, direc, -1)
+		vehicleIntersectionCollide(v, checkV)
 		if (vehiclesCollide(v, checkV)): return (None, None)
 
 	# Check for 2 lane track first
@@ -199,11 +198,12 @@ def runTesting():
 		move = False
 		return
 
-	mode = NON_COOP if i % 2 == 0 else COOP
+	mode = COOP if i % 2 == 0 else NON_COOP
 	reset()
 	for (theta, direc) in testLists[int(i)//2][1]:
 		makeVehicle(theta, direc, vehR)
 	testTime = testLists[int(i)//2][0]
+	testLabel.configure(text = "Test " + str(int(i)//2))
 	timerCounter = time.time()
 	move, testing = True, True
 	vehiclesMove()
@@ -213,7 +213,7 @@ def stopTesting():
 	if (timerCounter != None and (time.time() - timerCounter) >= testTime):
 		move = False
 		print(modeName(), totalLoops)
-		if (mode == NON_COOP):
+		if (mode == COOP):
 			firstLoops = totalLoops
 		else:
 			testResults.append((testTime, firstLoops, totalLoops))
@@ -317,13 +317,18 @@ def changeMode(x, y):
 		if (mode == NON_COOP): mode = COOP
 		else: mode = NON_COOP
 		modeLabel.configure(text = modeName())
+		move = False
+		reset()
 
 def reset():
-	global vehicles, totalLoops, mode
+	global vehicles, totalLoops, mode, timerCounter
 	totalLoops = 0
+	timerCounter = time.time()
+	timerLabel.config(text = "0.0 s")
 
 	initEnv()
 	canvas.delete("all")
+	canvas.delete("all")  # just in case lul
 	# Add title and car information at top and bottom of screen
 	canvas.create_text(CANVAS_WIDTH/2, MARGIN // 10,
 		text='      Cooperative vs Non-Cooperative Autonomous Driving')
@@ -337,6 +342,8 @@ def reset():
 	infoLabel.configure(text = "")
 	modeLabel.place(x = CANVAS_WIDTH / 2 - MARGIN // 3, y = MARGIN // 5)
 	modeLabel.configure(text = modeName())
+	testLabel.place(x = CANVAS_WIDTH / 2 - MARGIN // 5, y = MARGIN)
+	testLabel.configure(text = "")
 	drawTrackButton()
 	drawDetectionButton()
 	drawModeButton()
@@ -349,10 +356,27 @@ def pickTrack():
 	else:
 		figure8Track()
 
+def getTrack(direc):
+	if (direc == CLK): return trackLeftX
+	return trackRightX
+
+def validTests(tList):
+	global vehR
+	test = tList[1]
+	veh = []
+	for (theta, direc) in test:
+		veh.append(vehicle.Vehicle(getTrack(direc), trackY, vehR, theta, direc, -1))
+	for i in range(len(veh) - 1):
+		for j in range(i + 1, len(veh)):
+			if (vehiclesCollide(veh[i], veh[j]) or
+				vehicleIntersectionCollide(veh[i], veh[j])): return False
+	return True
+
+
 def runGraphics(tFlag=False, tLists=None):
 	global testLists, testResults
 	if tFlag:
-		testLists = tLists
+		testLists = list(filter(validTests, tLists))
 		runTesting()
 		root.mainloop()
 		return testResults
