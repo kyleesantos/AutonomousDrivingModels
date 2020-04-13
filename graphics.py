@@ -70,7 +70,7 @@ def testCase(m):
 def keyPress(event):
 	global move, lastTime, testList, testLists
 	if (event.char == "s"):
-		if lastTime == None: 
+		if lastTime == None:
 			lastTime = time.time()
 			timerCounter = 0
 		move = not move
@@ -204,7 +204,7 @@ def vehiclesMove():
 			stopTesting()
 	else: lastTime = None
 	if not testing:
-		root.after(10, vehiclesMove)
+		root.after(1, vehiclesMove)
 
 def runTesting():
 	global testLists, lastTime, move, testing, mode, i, testTime
@@ -221,11 +221,11 @@ def runTesting():
 	testLabel.configure(text = "Test " + str(int(i)//2))
 	lastTime = time.time()
 	move, testing = True, True
-	vehiclesMove()
+	root.after(1, vehiclesMove)
 
 def stopTesting():
-	global lastTime, testTime, move, mode, testResults, firstLoops, i
-	if (lastTime != None and (time.time() - lastTime) >= testTime):
+	global timerCounter, testTime, move, mode, testResults, firstLoops, i
+	if (timerCounter != None and timerCounter >= testTime):
 		move = False
 		print(modeName(), totalLoops)
 		if (mode == COOP):
@@ -236,7 +236,7 @@ def stopTesting():
 		root.after(1000, runTesting())
 		lastTime = time.time()
 	else:
-		root.after(10, vehiclesMove)
+		root.after(1, vehiclesMove)
 
 
 def drawTrack(x, y, outR, inR):

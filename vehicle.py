@@ -28,6 +28,8 @@ class Vehicle:
     self.pending = False
     self.passingIntersection = False
     self.inCriticalSection = False
+    self.inChain = False
+    self.leadVehicle = None
     self.acceleration = 0
     self.optAngSpeed = direc * toAngular(idm.OPT_VELOCITY, r)
     self.canvas = []
@@ -215,6 +217,18 @@ class Vehicle:
 
   def setInCriticalSection(self, val):
     self.inCriticalSection = val
+
+  def setChain(self, val):
+      self.inChain = val
+
+  def isInChain(self):
+      return self.inChain
+
+  def setLeadVehicle(self, vehicle):
+      self.leadVehicle = vehicle
+
+  def getLeadVehicle(self):
+      return self.leadVehicle
 
   def getX(self):
     return self.trackX + math.cos(toRadians(self.theta)) * self.r

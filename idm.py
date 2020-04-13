@@ -3,11 +3,11 @@ import vehicle
 from util import *
 
 # Intelligent Driver Model Parameters
-REAL_OPT_VELOCITY = 0.3  # m/s
+REAL_OPT_VELOCITY = 0.2  # m/s
 REAL_MAX_ACCEL = 0.1     # m/s2
 REAL_OPT_DECEL = 0.1     # m/s2
 REAL_BUFFER_DIST = 7   # m
-REAL_DETECTION_DIST = 6  # m
+REAL_DETECTION_DIST = 8  # m
 
 OPT_VELOCITY = SCALE * REAL_OPT_VELOCITY  # pixels/s
 MAX_ACCEL = SCALE * REAL_MAX_ACCEL        # pixels/s2
@@ -43,22 +43,21 @@ def isOnPath(vehicle1, vehicle2):
 def findNearestOnPath(vehicle, vehicles):
   nearby_vehicles = []
   for vehicle2 in vehicles:
-    if isOnPath(vehicle, vehicle2):
+    if isDetectable(vehicle, vehicle2) and isOnPath(vehicle, vehicle2):
       nearby_vehicles.append(vehicle2)
   return nearby_vehicles
 
 
 def findClosestObstacleAhead(vehicle1, vehicles):
-  closest_diff = MAX_DEG
-  closest_speed = 0
+  closestDiff = MAX_DEG
+  closestSpeed = 0
+  closestTheta = -1
   theta1 = vehicle1.getTheta()
   thetas = [veh.getTheta() for veh in vehicles]
   if not vehicle1.isPassingIntersection():
-    if vehicle1.getDirection() == CTR_CLK:
-      if (theta1 < RIGHT_ENTRANCE_THETA):
+    if (vehicle1.getDirection() == CTR_CLK) and (theta1 < RIGHT_ENTRANCE_THETA):
         thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
-    else:
-      if (theta1 > LEFT_ENTRANCE_THETA):
+    elif (vehicle1.getDirection() == CLK) and (theta1 > LEFT_ENTRANCE_THETA):
         thetas.append(LEFT_ENTRANCE_THETA - toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
 
   for (i,theta2) in enumerate(thetas):
@@ -66,15 +65,15 @@ def findClosestObstacleAhead(vehicle1, vehicles):
       diff = theta1 - theta2 if theta1 > theta2 else theta1 + MAX_DEG - theta2
     else:
       diff = theta2 - theta1 if theta2 > theta1 else theta2 + MAX_DEG - theta1
-    if diff < closest_diff:
-      closest_diff = diff
-      closest_theta = theta2
+    if diff < closestDiff:
+      closestDiff = diff
+      closestTheta = theta2
       if i < len(vehicles):
-        closest_speed = vehicles[i].getAngSpeed()
+        closestSpeed = vehicles[i].getAngSpeed()
       else:
-        closest_speed = 0
+        closestSpeed = 0
 
-  return closest_speed, closest_diff
+  return closestSpeed, closestDiff
 
 
 def updateAccels(vehicles):
