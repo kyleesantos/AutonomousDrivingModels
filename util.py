@@ -77,4 +77,3 @@ def getArcDistance(car1, car2=None, theta=None):
     if (angle1 < angle2): arcAngle = MAX_DEG - (angle2 - angle1)
     else: arcAngle = angle1 - angle2
   return (arcAngle / MAX_DEG) * circumference
->>>>>>> 75f1658dce157064191f0fdb2f743dd479be8f68

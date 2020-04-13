@@ -3,7 +3,7 @@ import tkinter as tk
 import itertools, math, time
 import numpy as np
 
-from pathPlanningFig8 import Env
+from pathPlanning import Env
 from tkinter import *
 from util import *
 import vehicle
@@ -56,7 +56,7 @@ def initEnv():
 	env = Env(mode=mode)
 	env.setIntersection((610, 367))
 	#env.setIntersection((trackX, trackY))
-	env.setWeights(np.array([50,1]))
+	env.setWeights(np.array([250,1]))
 
 def testCase(m):
 	global lastTime, move, testing, mode, testList
