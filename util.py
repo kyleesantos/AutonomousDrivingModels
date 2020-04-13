@@ -52,3 +52,10 @@ def vehicleIntersectionCollide(veh1, veh2):
     (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
   if temp: print("collide")
   return temp
+
+
+  def euclidean(coord1, coord2):
+    x1, y1 = coord1
+    x2, y2 = coord2
+
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)

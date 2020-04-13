@@ -88,6 +88,5 @@ def updateAccels(vehicles):
       lin_speed2 = abs(toLinear(closest_speed, vehicle1.getRadius()))
       new_accel = calculateAccel(dist, lin_speed1, lin_speed1 - lin_speed2)
       vehicle1.setAcceleration(new_accel)
-      if (vehicle1.getID() == 3): print("vehicle 3 accel is set to ", new_accel)
     else:
       vehicle1.setAcceleration(MAX_ACCEL)
