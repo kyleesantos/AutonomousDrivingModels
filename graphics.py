@@ -17,6 +17,7 @@ CANVAS_HEIGHT = 800
 TRACK_WIDTH = vehicle.VEH_WIDTH * 4 # 120
 MARGIN = 100
 TWO_LANE = False
+UPDATE_TIME = 0.015
 
 #size of track
 outR = (CANVAS_WIDTH + TRACK_WIDTH - 2 * MARGIN) // 4 # 280
@@ -32,7 +33,7 @@ trackX = CANVAS_WIDTH // 2
 canvas = tk.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
 canvas.pack()
 
-timerCounter = None
+lastTime, timerCounter = None, 0
 timerLabel = Label(text = "0.0 s", fg = "red")
 infoLabel = Label(text = "")
 loopLabel = Label(text = "0", fg = "darkBlue")
@@ -58,18 +59,20 @@ def initEnv():
 	env.setWeights(np.array([50,1]))
 
 def testCase(m):
-	global timerCounter, move, testing, mode, testList
+	global lastTime, move, testing, mode, testList
 	mode = m
 	reset()
 	for (theta, direc) in testList:
 		makeVehicle(theta, direc, vehR)
-	timerCounter = time.time()
+	lastTime = time.time()
 	move, testing = True, True
 
 def keyPress(event):
-	global move, timerCounter, testList, testLists
+	global move, lastTime, testList, testLists
 	if (event.char == "s"):
-		if timerCounter == None: timerCounter = time.time()
+		if lastTime == None:
+			lastTime = time.time()
+			timerCounter = 0
 		move = not move
 	if (event.char == "r"):
 		reset()
@@ -81,6 +84,11 @@ def keyPress(event):
 	if (event.char == "2"):
 		for v in vehicles:
 			v.decreaseAngSpeed(1)
+
+	# merge
+	if (event.char == "m"):
+		 for v in vehicles:
+		 	if (v.getRadius() <= vehR + TRACK_WIDTH): v.setMerge(True)
 
 def mousePress(event):
 	x, y = event.x, event.y
@@ -167,11 +175,15 @@ def infoListToText():
 	return txt
 
 def vehiclesMove():
-	global timerCounter, info, totalLoops, testing
+	global lastTime, info, totalLoops, testing, timerCounter
 	if move:
 		env.step(vehicles)
+		currTime = time.time()
+		if (lastTime == None): lastTime = currTime - UPDATE_TIME
+		elapsedTime = (currTime - lastTime) / UPDATE_TIME
 		for v in vehicles:
-			v.update()
+			if (v.getRadius() > vehR + TRACK_WIDTH): v.setMerge(False)
+			v.update(elapsedTime)
 			if (v.getLooped()): totalLoops += 1
 			infoLabel.configure(text = infoListToText())
 			canvas.coords(v.getVehicleCanvas(), *flatten(v.getVehPoints()))
@@ -184,15 +196,18 @@ def vehiclesMove():
 			canvas.coords(v.getDetRadCanvas(), v.getX() - idm.DETECTION_DIST,
 				v.getY() - idm.DETECTION_DIST, v.getX() + idm.DETECTION_DIST,
 				v.getY() + idm.DETECTION_DIST)
-		timerLabel.config(text = "{0:.1f} s".format(round(time.time() - timerCounter, 1)))
+		timerCounter += (currTime - lastTime)
+		timerLabel.config(text = "{0:.1f} s".format(round(timerCounter, 1)))
 		loopLabel.config(text = totalLoops)
+		lastTime = currTime
 		if testing:
 			stopTesting()
+	else: lastTime = None
 	if not testing:
-		root.after(10, vehiclesMove)
+		root.after(1, vehiclesMove)
 
 def runTesting():
-	global testLists, timerCounter, move, testing, mode, i, testTime
+	global testLists, lastTime, move, testing, mode, i, testTime
 	if i >= 2*len(testLists):
 		print('Done')
 		move = False
@@ -204,13 +219,13 @@ def runTesting():
 		makeVehicle(theta, direc, vehR)
 	testTime = testLists[int(i)//2][0]
 	testLabel.configure(text = "Test " + str(int(i)//2))
-	timerCounter = time.time()
+	lastTime = time.time()
 	move, testing = True, True
-	vehiclesMove()
+	root.after(1, vehiclesMove)
 
 def stopTesting():
 	global timerCounter, testTime, move, mode, testResults, firstLoops, i
-	if (timerCounter != None and (time.time() - timerCounter) >= testTime):
+	if (timerCounter != None and timerCounter >= testTime):
 		move = False
 		print(modeName(), totalLoops)
 		if (mode == COOP):
@@ -219,9 +234,9 @@ def stopTesting():
 			testResults.append((testTime, firstLoops, totalLoops))
 		i += 1
 		root.after(1000, runTesting())
-		timerCounter = time.time()
+		lastTime = time.time()
 	else:
-		root.after(10, vehiclesMove)
+		root.after(1, vehiclesMove)
 
 
 def drawTrack(x, y, outR, inR):
@@ -321,9 +336,10 @@ def changeMode(x, y):
 		reset()
 
 def reset():
-	global vehicles, totalLoops, mode, timerCounter
+	global vehicles, totalLoops, mode, lastTime, timerCounter
 	totalLoops = 0
-	timerCounter = time.time()
+	lastTime = time.time()
+	timerCounter = 0
 	timerLabel.config(text = "0.0 s")
 
 	initEnv()

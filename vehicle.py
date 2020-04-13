@@ -29,9 +29,12 @@ class Vehicle:
     self.passingIntersection = False
     self.inCriticalSection = False
     self.warnings = []
+    self.inChain = False
+    self.leadVehicle = None
     self.acceleration = 0
     self.optAngSpeed = direc * toAngular(idm.OPT_VELOCITY, r)
     self.canvas = []
+    self.merge = False
     self._createVehicle(vehX, vehY)
 
 
@@ -121,37 +124,37 @@ class Vehicle:
     y = self.trackY - r * math.sin(a)
     return (x, y)
 
-  def _passIntersection(self):
+  def _passIntersection(self, time):
     prev = self.theta % MAX_DEG
-    self.theta = (self.theta + self.angSpeed) % MAX_DEG
+    self.theta = (self.theta + (self.angSpeed * time)) % MAX_DEG
     curr = self.theta % MAX_DEG
     self.looped = (prev < (MAX_DEG // 2) and curr > (MAX_DEG // 2) and
       (not self.looped))
 
 
-  def _turnCar(self):
+  def _turnCar(self, time):
     newPoints = []
     for i in range(len(self.vehRadii)):
-        self.vehAngles[i] += self.angSpeed
+        self.vehAngles[i] += (self.angSpeed * time)
         newPoints.append(self._xyCoord(self.vehRadii[i], self.vehAngles[i]))
     self.vehPoints = newPoints
 
 
-  def _turnWheels(self):
+  def _turnWheels(self, time):
     newWheels = []
     for i in range(len(self.wheelPoints)):
         indWheel = []
         for j in range(len(self.wheelPoints)):
-          self.wheelAngles[i][j] += self.angSpeed
+          self.wheelAngles[i][j] += (self.angSpeed * time)
           indWheel.append(self._xyCoord(self.wheelRadii[i][j], self.wheelAngles[i][j]))
         newWheels.append(indWheel)
     self.wheelPoints = newWheels
 
 
-  def _turnDirection(self):
+  def _turnDirection(self, time):
     newDir = []
     for i in range(len(self.dirRadii)):
-        self.dirAngles[i] += self.angSpeed
+        self.dirAngles[i] += (self.angSpeed * time)
         newDir.append(self._xyCoord(self.dirRadii[i], self.dirAngles[i]))
     self.dirPoints = newDir
 
@@ -161,15 +164,39 @@ class Vehicle:
     if (self.angSpeed == self.optAngSpeed):
       self.acceleration = 0
 
-  def _turn(self):
-    self._turnCar()
-    self._turnWheels()
-    self._turnDirection()
-    self._passIntersection()
+# need to finish
+  def _mergeOut(self):
+    track_width = VEH_WIDTH * 4
 
-  def update(self):
+    d = 4
+    newPoints = []
+    for i in range(len(self.vehRadii)):
+        self.vehRadii[i] += d
+        if (i == 0 or i == 3): self.vehAngles[i] -= 0.2
+        else: self.vehAngles[i] += 0.2
+        newPoints.append(self._xyCoord(self.vehRadii[i], self.vehAngles[i]))
+    self.vehPoints = newPoints
+
+    # for i in range(len(self.wheelRadii)):
+    #   for j in range(len(self.wheelRadii[i])):
+    #     self.wheelRadii[i][j] += d
+    # for i in range(len(self.dirRadii)):
+    #     self.dirRadii[i] += d
+    self.r += d
+
+  def _turn(self, time):
+    self._turnCar(time)
+    self._turnWheels(time)
+    self._turnDirection(time)
+    self._passIntersection(time)
+
+  def update(self, time):
     self._updateAngSpeed()
-    self._turn()
+    self._turn(time)
+    if (self.merge): self._mergeOut()
+
+  def getVehAngles(self):
+    return self.vehAngles
 
   # adds warning to vehicles list of warnings. 
   # returns warnings the vehicles has not seen before 
@@ -204,6 +231,18 @@ class Vehicle:
 
   def setInCriticalSection(self, val):
     self.inCriticalSection = val
+
+  def setChain(self, val):
+      self.inChain = val
+
+  def isInChain(self):
+      return self.inChain
+
+  def setLeadVehicle(self, vehicle):
+      self.leadVehicle = vehicle
+
+  def getLeadVehicle(self):
+      return self.leadVehicle
 
   def getX(self):
     return self.trackX + math.cos(toRadians(self.theta)) * self.r
@@ -287,3 +326,6 @@ class Vehicle:
 
   def setCanvas(self, canvas):
     self.canvas = canvas
+
+  def setMerge(self, merge):
+    self.merge = merge

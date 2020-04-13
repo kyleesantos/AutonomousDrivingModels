@@ -59,3 +59,22 @@ def vehicleIntersectionCollide(veh1, veh2):
     x2, y2 = coord2
 
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+def getArcDistance(car1, car2=None, theta=None):
+  if (car1 == car2): return 0
+
+  angle1 = car1.getTheta()
+  if (theta is None):
+    angle2 = car2.getTheta()
+  else:
+    angle2 = theta
+  circumference = MAX_RAD * car1.getRadius()
+
+  if (car1.getDirection() == CTR_CLK):
+    if (angle2 < angle1): arcAngle = MAX_DEG - (angle1 - angle2)
+    else: arcAngle = angle2 - angle1
+  else:
+    if (angle1 < angle2): arcAngle = MAX_DEG - (angle2 - angle1)
+    else: arcAngle = angle1 - angle2
+  return (arcAngle / MAX_DEG) * circumference
+>>>>>>> 75f1658dce157064191f0fdb2f743dd479be8f68
