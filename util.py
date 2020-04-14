@@ -1,6 +1,7 @@
 import math
 
 SCALE = 25 # pixels/m
+UPDATE_TIME = 0.015
 
 # Track Parameters
 LEFT_ENTRANCE_THETA = 35

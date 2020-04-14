@@ -9,7 +9,7 @@ REAL_NEAR_INTER_THRESH = 24
 
 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersection
 REAL_AT_INTER_THRESH = 8
-REAL_MAX_CAR_SEPARATION = 12
+REAL_MAX_CAR_SEPARATION = 10
 REAL_CRITICAL_THRESH = 6
 MAX_PASSING_CARS = 3
 
@@ -34,7 +34,7 @@ class Env():
 		self.decision = None # decision is a list of 'decisions' where a decision is a tuple indicating a side and number of cars to let through
 		self.lastPassingVehicle = None
 		self.vehicles = None
-		self.chains = None
+		self.newChain = None
 
 
 	# assings a score to the left and right sides of the track, indicating priority when choosing
@@ -56,6 +56,19 @@ class Env():
 			weights = self.weights
 
 		return np.dot(weights, vector)
+
+
+	def getNextVehicleInfo(self, vehicle):
+		closestDiff = MAX_DEG
+		closestSpeed = -1
+		closestVehicle = None
+		for vehicle2 in self.vehicles:
+			if vehicle != vehicle2 and vehicle.getDirection() == vehicle2.getDirection():
+				dist = getArcDistance(vehicle, car2=vehicle2)
+				if dist < closestDiff:
+					closestDiff = dist
+					closestSpeed = vehicle2.getAngSpeed()
+		return closestSpeed, closestDiff
 
 
 	def getDistancesPerLane(self):
@@ -102,16 +115,23 @@ class Env():
 
 
 	def makeChains(self, vehicles):
+		print("Making chains")
+		excluded = set()
+		if (self.newChain):
+			excluded = set(self.newChain)
+			self.newChain = None
+
 		leftDistances, rightDistances = self.getDistancesPerLane()
-		self.chains = (self.getChainsOfCars(leftDistances) +
-						self.getChainsOfCars(rightDistances))
-		for chain in self.chains:
+		chains = (self.getChainsOfCars(leftDistances) +
+					self.getChainsOfCars(rightDistances))
+		for chain in chains:
 			for vehicle in chain[1::]:
-				vehicle.setChain(True)
-				vehicle.setLeadVehicle(chain[0])
-		# chains = [[c.getID() for c in chain] for chain in self.chains]
-		# print(chains)
-		# print(self.getRightOfWay())
+				if vehicle not in excluded:
+					vehicle.setChain(True)
+					vehicle.setLeadVehicle(chain[0])
+		cs = [[c.getID() for c in chain] for chain in chains]
+		print(cs)
+		print(self.getRightOfWay())
 
 
 	def getVehiclesAtIntersection(self):
@@ -121,18 +141,23 @@ class Env():
 		rightVehicles = []
 
 		if self.mode == COOP:
-			for chain in self.chains:
-				leadVehicle = chain[0]
-				if leadVehicle.getDirection() == CLK:
-					arcDistance = getArcDistance(leadVehicle, theta=LEFT_ENTRANCE_THETA)
-					if (arcDistance < self.atIntersectionThreshold):
-						leftVehicles.extend(chain)
-						minDistLeft = arcDistance
-				else:
-					arcDistance = getArcDistance(leadVehicle, theta=RIGHT_ENTRANCE_THETA)
-					if (arcDistance < self.atIntersectionThreshold):
-						rightVehicles.extend(chain)
-						minDistRight = arcDistance
+			leftVehicles, rightVehicles = self.getDistancesPerLane()
+			if len(leftVehicles) > 0:
+				minDistLeft = leftVehicles[0][1]
+				for i in range(1, len(leftVehicles)):
+					separation = leftVehicles[i][1] - leftVehicles[i - 1][1]
+					if separation > self.maxCarSeparation:
+						leftVehicles = leftVehicles[0::i]
+						break
+			if len(rightVehicles) > 0:
+				minDistRight = rightVehicles[0][1]
+				for i in range(1, len(rightVehicles)):
+					separation = rightVehicles[i][1] - rightVehicles[i - 1][1]
+					if separation > self.maxCarSeparation:
+						rightVehicles = rightVehicles[0::i]
+						break
+			leftVehicles = [veh[0] for veh in leftVehicles]
+			rightVehicles = [veh[0] for veh in rightVehicles]
 		else:
 			leftVehicles, rightVehicles = self.getDistancesPerLane()
 			if len(leftVehicles) > 0 and leftVehicles[0][1] < self.atIntersectionThreshold:
@@ -152,8 +177,6 @@ class Env():
 	def getNextDecision(self):
 		leftDecision = None
 		rightDecision = None
-
-		self.makeChains(self.vehicles)
 
 		# get number of vehicles close to intersection at both lanes
 		minDistLeft, minDistRight, leftVehicles, rightVehicles = self.getVehiclesAtIntersection()
@@ -192,6 +215,7 @@ class Env():
 
 
 	def distributeDecision(self):
+		self.makeChains(self.vehicles)
 		leftVehicles, rightVehicles = self.vehiclesAtIntersection
 		side = self.decision[0][0]
 		numCars = self.decision[0][1]
@@ -200,18 +224,21 @@ class Env():
 		else: passingVehicles = rightVehicles
 
 		for i in range(len(passingVehicles)):
+			vehicle = passingVehicles[i]
 			if (i < numCars):
-				vehicle = passingVehicles[i]
 				vehicle.setPassingIntersection(passing=True)
 				if (i == numCars-1):
 					self.lastPassingVehicle = vehicle
 
 			# create new chain
 			if (i == numCars):
-				# print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~new chain")
-				# print("starting at " + str(passingVehicles[i].getID()))
-				passingVehicles[i].setChain(False)
+				self.newChain = [vehicle]
+				print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~new chain")
+				print("starting at " + str(vehicle.getID()))
+				vehicle.setChain(False)
+				vehicle.setLeadVehicle(None)
 			if (i > numCars):
+				self.newChain.append(vehicle)
 				vehicle.setLeadVehicle(passingVehicles[numCars])
 
 
@@ -222,7 +249,15 @@ class Env():
 				if vehicle.isInChain():
 					currAccel = vehicle.getAcceleration()
 					leadAccel = vehicle.getLeadVehicle().getAcceleration()
-					vehicle.setAcceleration(max(currAccel, leadAccel), angular=True)
+
+					speed2, dist = self.getNextVehicleInfo(vehicle)
+					speedDiff = vehicle.getAngSpeed() - speed2
+					maxAccel = dist - toAngular(idm.BUFFER_DIST*2,vehicle.getRadius()) - (speedDiff / UPDATE_TIME) + leadAccel
+					if speedDiff > 0:
+						newAccel = min(max(currAccel, leadAccel), maxAccel)
+					else:
+						newAccel = max(currAccel, leadAccel)
+					vehicle.setAcceleration(newAccel, angular=True)
 
 
 	def updateVehicles(self, vehicles, direction):
@@ -263,18 +298,6 @@ class Env():
 			self.updateVehicles(vehicles, CLK)
 
 		self.updateAccels(vehicles)
-
-# for chain in chains:
-# 	leadingAccel = chain[0].getAcceleration()
-# 	for (i,vehicle) in enumerate(chain):
-# 		tempAccel = vehicle.getAcceleration()
-# 		if vehicle.isPassingIntersection() or not vehicle.isInCriticalSection():
-# 			vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
-# 		else:
-# 			for j in range(i+1,len(chain)):
-# 				currAccel = chain[j].getAcceleration()
-# 				chain[j].setAcceleration(max(tempAccel, currAccel), angular=True)
-# 			break
 
 
 	def getRightOfWay(self):
