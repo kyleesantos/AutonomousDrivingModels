@@ -28,6 +28,7 @@ class Vehicle:
     self.pending = False
     self.passingIntersection = False
     self.inCriticalSection = False
+    self.warnings = []
     self.inChain = False
     self.leadVehicle = None
     self.acceleration = 0
@@ -196,6 +197,19 @@ class Vehicle:
 
   def getVehAngles(self):
     return self.vehAngles
+
+  # adds warning to vehicles list of warnings. 
+  # returns warnings the vehicles has not seen before 
+  def addWarnings(self, warnings):
+    result = []
+    for warning in warnings:
+      if not warning in self.warnings:
+        self.warnings.append(warning)
+        result.append(warning)
+    return result
+
+  def handleWarning(self):
+    pass
 
   def getID(self):
     return self.id

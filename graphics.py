@@ -55,7 +55,7 @@ def initEnv():
 	env = Env(mode=mode)
 	env.setIntersection((610, 367))
 	#env.setIntersection((trackX, trackY))
-	env.setWeights(np.array([1,1]))
+	env.setWeights(np.array([250,1]))
 
 def testCase(m):
 	global lastTime, move, testing, mode, testList
