@@ -163,12 +163,13 @@ class Env():
 			leftVehicles, rightVehicles = self.getDistancesPerLane()
 			if len(leftVehicles) > 0 and leftVehicles[0][1] < self.atIntersectionThreshold:
 				minDistLeft = leftVehicles[0][1]
-				leftVehicles = [veh[0] for veh in leftVehicles]
 				leftVehicles = [leftVehicles[0]]
 			if len(rightVehicles) > 0 and rightVehicles[0][1] < self.atIntersectionThreshold:
 				minDistRight = rightVehicles[0][1]
-				rightVehicles = [veh[0] for veh in rightVehicles]
 				rightVehicles = [rightVehicles[0]]
+
+			leftVehicles = [veh[0] for veh in leftVehicles]
+			rightVehicles = [veh[0] for veh in rightVehicles]
 
 		return minDistLeft, minDistRight, leftVehicles, rightVehicles
 

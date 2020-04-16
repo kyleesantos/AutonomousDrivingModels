@@ -34,6 +34,8 @@ class Vehicle:
     self.acceleration = 0
     self.optAngSpeed = direc * toAngular(idm.OPT_VELOCITY, r)
     self.canvas = []
+    self.numCarsBehind = 0
+    self.communicatedPresence = False
     
     self.totAngSpeed = 0
     self.totAngAcceleration = 0
@@ -188,6 +190,15 @@ class Vehicle:
     self._turn(time)
     self._updateTotals(time)
 
+  def setNumCarsBehind(self, val):
+    self.numCarsBehind = val
+
+  def hasCommunicatedPresence(self):
+    return self.communicatedPresence
+
+  def setCommunicatedPresence(self, val):
+    self.communicatedPresence = val
+
   def getVehAngles(self):
     return self.vehAngles
 
@@ -260,6 +271,9 @@ class Vehicle:
 
   def getVehPoints(self):
     return self.vehPoints
+
+  def getNumCarsBehind(self):
+    return self.numCarsBehind
 
   # returns center point of vehicle
   def getPos(self):
