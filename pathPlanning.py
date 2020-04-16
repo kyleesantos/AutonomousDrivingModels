@@ -5,11 +5,11 @@ from util import *
 import idm
 
 # vehicles with less than this arc distance to intersection are considered as 'approaching' intersection
-REAL_NEAR_INTER_THRESH = 24
-
+REAL_NEAR_INTER_THRESH = 20
 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersection
-REAL_AT_INTER_THRESH = 8
-REAL_MAX_CAR_SEPARATION = 10
+REAL_AT_INTER_THRESH = 4
+
+REAL_MAX_CAR_SEPARATION = 12
 REAL_CRITICAL_THRESH = 6
 MAX_PASSING_CARS = 3
 
@@ -129,6 +129,7 @@ class Env():
 				if vehicle not in excluded:
 					vehicle.setChain(True)
 					vehicle.setLeadVehicle(chain[0])
+		chains.append(list(excluded))
 		cs = [[c.getID() for c in chain] for chain in chains]
 		print(cs)
 		print(self.getRightOfWay())
