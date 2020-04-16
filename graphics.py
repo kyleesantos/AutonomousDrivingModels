@@ -72,7 +72,7 @@ def keyPress(event):
 		if lastTime == None:
 			lastTime = time.time()
 		move = not move
-		printAverages()
+		addAverages()
 	if (event.char == "r"):
 		reset()
 	if (event.char == "1"):
@@ -232,7 +232,7 @@ def checkStopTesting():
 	if (timerCounter != None and timerCounter >= testTime):
 		move = False
 		print(modeName(), totalLoops)
-		# printAverages()
+		addAverages()
 		if (mode == COOP):
 			firstLoops = (totalLoops, allVehSpeed)
 		else:
@@ -244,17 +244,17 @@ def checkStopTesting():
 	else:
 		root.after(1, vehiclesMove)
 
-def printAverages():
+def addAverages():
 	global allVehSpeed
-	print("Average: ", "Velocity", "Acceleration", "Deceleration", "Waiting Time")
+	# print("Average: ", "Velocity", "Acceleration", "Deceleration", "Waiting Time")
 	allVehSpeed = [0, 0, 0, 0]
 	for v in vehicles:
 		speed = [v.getID(), v.getAvgAngSpeed(), v.getAvgAngAcceleration(),
 			v.getAvgAngDeceleration(), v.getWaitingTime()]
-		print(speed)
+		# print(speed)
 		allVehSpeed = [allVehSpeed[i] + speed[i + 1] for i in range(len(allVehSpeed))]
 	allVehSpeed = [ veh / len(vehicles) for veh in allVehSpeed]
-	print("Average of all vehicles: ", allVehSpeed)
+	# print("Average of all vehicles: ", allVehSpeed)
 
 def drawTrack(x, y, outR, inR):
 	canvas.create_oval(x - outR, y - outR, x + outR, y + outR,
