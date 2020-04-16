@@ -43,7 +43,7 @@ trackBCoords, detBCoords, modeBCoords = [], [], []
 move = False
 testing, testTime = False, 5.0
 testList, testLists = [], [] # degrees, direction
-testResults = []
+testResults, allVehSpeed = [], []
 vehicles = [] # Vehicle objects
 detectionRadius = False
 totalLoops = 0
@@ -166,7 +166,8 @@ def infoListToText():
 	txt = ""
 	for i in range(len(vehicles)):
 		v = vehicles[i]
-		txt += "{}. speed = {:.1f}\n".format(i, v.getAngSpeed())
+		txt += "{}. speed = {:.1f}, # cars behind = {}\n".format(i, v.getAngSpeed(),
+			v.getNumCarsBehind())
 	return txt
 
 def vehiclesMove():
@@ -218,15 +219,17 @@ def runTesting():
 	root.after(1, vehiclesMove)
 
 def stopTesting():
-	global timerCounter, testTime, move, mode, testResults, firstLoops, i
+	global timerCounter, testTime, move, mode, testResults, firstLoops
+	global lastTime, allVehSpeed, i
 	if (timerCounter != None and timerCounter >= testTime):
 		move = False
 		print(modeName(), totalLoops)
 		printAverages()
 		if (mode == COOP):
-			firstLoops = totalLoops
+			firstLoops = (totalLoops, allVehSpeed)
 		else:
-			testResults.append((testTime, firstLoops, totalLoops))
+			results = [testTime, firstLoops[0]] + firstLoops[1] + [totalLoops] + allVehSpeed
+			testResults.append(results)
 		i += 1
 		root.after(1000, runTesting())
 		lastTime = time.time()
@@ -234,6 +237,7 @@ def stopTesting():
 		root.after(1, vehiclesMove)
 
 def printAverages():
+	global allVehSpeed
 	print("Average: ", "Velocity", "Acceleration", "Deceleration", "Waiting Time")
 	allVehSpeed = [0, 0, 0, 0]
 	for v in vehicles:
@@ -359,7 +363,7 @@ def reset():
 		text='   Total Loops:', fill = 'darkBlue')
 	vehicles = []
 
-	infoLabel.place(x = MARGIN // 9, y = MARGIN // 9)
+	infoLabel.place(x = 0, y = 0)
 	infoLabel.configure(text = "")
 	modeLabel.place(x = CANVAS_WIDTH / 2 - MARGIN // 3, y = MARGIN // 5)
 	modeLabel.configure(text = modeName())

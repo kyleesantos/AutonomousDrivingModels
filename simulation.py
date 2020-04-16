@@ -3,7 +3,10 @@ import csv
 
 from graphics import runGraphics
 
-fields = ['Time','Cooperative', 'Non-Cooperative']
+fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Average Acceleration', 
+            'Coop Average Deceleration', 'Coop Waiting Time', 'Non-Coop Total Loops',
+            'Non-Coop Average Velocity', 'Non-Coop Average Acceleration', 
+            'Non-Coop Average Deceleration', 'Non-Coops Waiting Time', ]
 
 def getArgs():
     parser = argparse.ArgumentParser()
@@ -25,11 +28,19 @@ def parseInput(path):
             testCases.append((time, test))
     return testCases
 
+def toString(lists):
+    results = []
+    for tuples in lists:
+        tuplesResults = []
+        for word in tuples:
+            tuplesResults.append(str(word))
+        results.append(tuplesResults)
+    return results
+
 def outputResults(results, path):
     with open(path, 'w') as file:
         csvWriter = csv.writer(file)
         csvWriter.writerow(fields)
-        results = [[str(a),str(b),str(c)] for (a,b,c) in results]
         csvWriter.writerows(results)
 
 
@@ -38,6 +49,7 @@ def main():
     if args.i and args.o:
         testList = parseInput(args.i)
         results = runGraphics(tFlag=True, tLists=testList)
+        results = toString(results)
         outputResults(results, args.o)
     else:
         runGraphics()
