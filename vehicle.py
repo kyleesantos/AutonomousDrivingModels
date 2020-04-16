@@ -34,7 +34,13 @@ class Vehicle:
     self.acceleration = 0
     self.optAngSpeed = direc * toAngular(idm.OPT_VELOCITY, r)
     self.canvas = []
-    self.merge = False
+    
+    self.totAngSpeed = 0
+    self.totAngAcceleration = 0
+    self.totAngDeceleration = 0
+    self.total = 0
+    self.waitingTime = 0
+
     self._createVehicle(vehX, vehY)
 
 
@@ -164,25 +170,12 @@ class Vehicle:
     if (self.angSpeed == self.optAngSpeed):
       self.acceleration = 0
 
-# need to finish
-  def _mergeOut(self):
-    track_width = VEH_WIDTH * 4
-
-    d = 4
-    newPoints = []
-    for i in range(len(self.vehRadii)):
-        self.vehRadii[i] += d
-        if (i == 0 or i == 3): self.vehAngles[i] -= 0.2
-        else: self.vehAngles[i] += 0.2
-        newPoints.append(self._xyCoord(self.vehRadii[i], self.vehAngles[i]))
-    self.vehPoints = newPoints
-
-    # for i in range(len(self.wheelRadii)):
-    #   for j in range(len(self.wheelRadii[i])):
-    #     self.wheelRadii[i][j] += d
-    # for i in range(len(self.dirRadii)):
-    #     self.dirRadii[i] += d
-    self.r += d
+  def _updateTotals(self, time):
+    self.total += 1
+    self.totAngSpeed += abs(self.angSpeed)
+    if (self.acceleration > 0): self.totAngAcceleration += self.acceleration
+    else: self.totAngDeceleration += abs(self.acceleration)
+    if (self.angSpeed == 0): self.waitingTime += (time * UPDATE_TIME)
 
   def _turn(self, time):
     self._turnCar(time)
@@ -193,7 +186,7 @@ class Vehicle:
   def update(self, time):
     self._updateAngSpeed()
     self._turn(time)
-    if (self.merge): self._mergeOut()
+    self._updateTotals(time)
 
   def getVehAngles(self):
     return self.vehAngles
@@ -306,6 +299,21 @@ class Vehicle:
     newSpeed = min(max(abs(self.angSpeed) - amount, 0), abs(self.optAngSpeed))
     self.angSpeed = self.direc * newSpeed
 
+  def getAvgAngSpeed(self):
+    if self.total == 0: return 0
+    return (self.totAngSpeed / self.total)
+
+  def getAvgAngAcceleration(self):
+    if self.total == 0: return 0
+    return (self.totAngAcceleration / self.total)
+
+  def getAvgAngDeceleration(self):
+    if self.total == 0: return 0
+    return (self.totAngDeceleration / self.total)
+
+  def getWaitingTime(self):
+    return self.waitingTime
+
   def getLooped(self):
     return self.looped
 
@@ -326,6 +334,3 @@ class Vehicle:
 
   def setCanvas(self, canvas):
     self.canvas = canvas
-
-  def setMerge(self, merge):
-    self.merge = merge

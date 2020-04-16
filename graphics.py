@@ -44,7 +44,7 @@ move = False
 testing, testTime = False, 5.0
 testList, testLists = [], [] # degrees, direction
 testResults = []
-vehicles = []
+vehicles = [] # Vehicle objects
 detectionRadius = False
 totalLoops = 0
 mode = COOP
@@ -73,6 +73,7 @@ def keyPress(event):
 			lastTime = time.time()
 			timerCounter = 0
 		move = not move
+		printAverages()
 	if (event.char == "r"):
 		reset()
 	if (event.char == "t"):
@@ -83,11 +84,6 @@ def keyPress(event):
 	if (event.char == "2"):
 		for v in vehicles:
 			v.decreaseAngSpeed(1)
-
-	# merge
-	if (event.char == "m"):
-		 for v in vehicles:
-		 	if (v.getRadius() <= vehR + TRACK_WIDTH): v.setMerge(True)
 
 def mousePress(event):
 	x, y = event.x, event.y
@@ -181,7 +177,6 @@ def vehiclesMove():
 		if (lastTime == None): lastTime = currTime - UPDATE_TIME
 		elapsedTime = (currTime - lastTime) / UPDATE_TIME
 		for v in vehicles:
-			if (v.getRadius() > vehR + TRACK_WIDTH): v.setMerge(False)
 			v.update(elapsedTime)
 			if (v.getLooped()): totalLoops += 1
 			infoLabel.configure(text = infoListToText())
@@ -227,6 +222,7 @@ def stopTesting():
 	if (timerCounter != None and timerCounter >= testTime):
 		move = False
 		print(modeName(), totalLoops)
+		printAverages()
 		if (mode == COOP):
 			firstLoops = totalLoops
 		else:
@@ -237,6 +233,16 @@ def stopTesting():
 	else:
 		root.after(1, vehiclesMove)
 
+def printAverages():
+	print("Average: ", "Velocity", "Acceleration", "Deceleration", "Waiting Time")
+	allVehSpeed = [0, 0, 0, 0]
+	for v in vehicles:
+		speed = [v.getID(), v.getAvgAngSpeed(), v.getAvgAngAcceleration(), 
+			v.getAvgAngDeceleration(), v.getWaitingTime()]
+		print(speed)
+		allVehSpeed = [allVehSpeed[i] + speed[i + 1] for i in range(len(allVehSpeed))]
+	allVehSpeed = [ veh / len(vehicles) for veh in allVehSpeed]
+	print("Average of all vehicles: ", allVehSpeed)
 
 def drawTrack(x, y, outR, inR):
 	canvas.create_oval(x - outR, y - outR, x + outR, y + outR,
