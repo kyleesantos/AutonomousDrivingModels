@@ -71,19 +71,24 @@ def keyPress(event):
 	if (event.char == "s"):
 		if lastTime == None:
 			lastTime = time.time()
-			timerCounter = 0
 		move = not move
 		printAverages()
 	if (event.char == "r"):
 		reset()
-	if (event.char == "t"):
-		runTesting()
 	if (event.char == "1"):
 		for v in vehicles:
 			v.increaseAngSpeed(1)
 	if (event.char == "2"):
 		for v in vehicles:
 			v.decreaseAngSpeed(1)
+
+def keyPressTest(event):
+	global move, lastTime
+	if (event.char == "s"):
+		lastTime = time.time()
+		move = not move
+		if move:
+			root.after(1, vehiclesMove())
 
 def mousePress(event):
 	x, y = event.x, event.y
@@ -94,6 +99,10 @@ def mousePress(event):
 	if (r != None):
 		theta = placeOnTrack(x, y, direc, r)
 		makeVehicle(theta, direc, r)
+
+def mousePressTest(event):
+	x, y = event.x, event.y
+	addDetectionRadius(x, y)
 
 def modeName():
 	global mode
@@ -138,7 +147,6 @@ def flatten(l):
 
 def makeVehicle(theta, direc, r):
 	global info, vehR
-	# Add Vehicle
 	radius = vehR
 	if (TWO_LANE):
 		tX = trackX
@@ -171,7 +179,7 @@ def infoListToText():
 	return txt
 
 def vehiclesMove():
-	global lastTime, info, totalLoops, testing, timerCounter
+	global lastTime, info, totalLoops, testing, timerCounter, move
 	if move:
 		env.step(vehicles)
 		currTime = time.time()
@@ -196,7 +204,7 @@ def vehiclesMove():
 		loopLabel.config(text = totalLoops)
 		lastTime = currTime
 		if testing:
-			stopTesting()
+			checkStopTesting()
 	else: lastTime = None
 	if not testing:
 		root.after(1, vehiclesMove)
@@ -218,13 +226,13 @@ def runTesting():
 	move, testing = True, True
 	root.after(1, vehiclesMove)
 
-def stopTesting():
+def checkStopTesting():
 	global timerCounter, testTime, move, mode, testResults, firstLoops
 	global lastTime, allVehSpeed, i
 	if (timerCounter != None and timerCounter >= testTime):
 		move = False
 		print(modeName(), totalLoops)
-		printAverages()
+		# printAverages()
 		if (mode == COOP):
 			firstLoops = (totalLoops, allVehSpeed)
 		else:
@@ -241,7 +249,7 @@ def printAverages():
 	print("Average: ", "Velocity", "Acceleration", "Deceleration", "Waiting Time")
 	allVehSpeed = [0, 0, 0, 0]
 	for v in vehicles:
-		speed = [v.getID(), v.getAvgAngSpeed(), v.getAvgAngAcceleration(), 
+		speed = [v.getID(), v.getAvgAngSpeed(), v.getAvgAngAcceleration(),
 			v.getAvgAngDeceleration(), v.getWaitingTime()]
 		print(speed)
 		allVehSpeed = [allVehSpeed[i] + speed[i + 1] for i in range(len(allVehSpeed))]
@@ -385,7 +393,7 @@ def getTrack(direc):
 	if (direc == CLK): return trackLeftX
 	return trackRightX
 
-def validTests(tList):
+def isValidTest(tList):
 	global vehR
 	test = tList[1]
 	veh = []
@@ -401,8 +409,10 @@ def validTests(tList):
 def runGraphics(tFlag=False, tLists=None):
 	global testLists, testResults
 	if tFlag:
-		testLists = list(filter(validTests, tLists))
+		testLists = list(filter(isValidTest, tLists))
 		runTesting()
+		root.bind("<Key>", keyPressTest)
+		root.bind("<Button-1>", mousePressTest)
 		root.mainloop()
 		return testResults
 	else:
