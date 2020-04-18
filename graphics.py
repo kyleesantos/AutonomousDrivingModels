@@ -237,6 +237,7 @@ def checkStopTesting():
 			firstLoops = (totalLoops, allVehSpeed)
 		else:
 			results = [testTime, firstLoops[0]] + firstLoops[1] + [totalLoops] + allVehSpeed
+			results += [(firstLoops[0] - totalLoops)  * 100.0  / totalLoops]
 			testResults.append(results)
 		i += 1
 		root.after(1000, runTesting())

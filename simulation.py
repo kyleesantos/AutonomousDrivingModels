@@ -7,7 +7,7 @@ from graphics import runGraphics
 fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Average Acceleration',
             'Coop Average Deceleration', 'Coop Waiting Time', 'Non-Coop Total Loops',
             'Non-Coop Average Velocity', 'Non-Coop Average Acceleration',
-            'Non-Coop Average Deceleration', 'Non-Coops Waiting Time', ]
+            'Non-Coop Average Deceleration', 'Non-Coops Waiting Time', 'Throughput Increase %']
 
 def getArgs():
     parser = argparse.ArgumentParser()
