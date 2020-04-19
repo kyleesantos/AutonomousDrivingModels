@@ -1,3 +1,2 @@
-Time,Coop Total Loops,Coop Average Velocity,Coop Average Acceleration,Coop Average Deceleration,Coop Waiting Time,Non-Coop Total Loops,Non-Coop Average Velocity,Non-Coop Average Acceleration,Non-Coop Average Deceleration,Non-Coops Waiting Time
-5.0,9,0.972878692159,0.00662595580818,0.0251768068176,0.76222205162,8,0.920766960624,0.0227899132508,0.034403087589,0.43748638365
-5.0,9,0.999566070945,0.00538153362841,0.0303344552328,0.749308556318,8,0.914362878874,0.0182865354856,0.033835318551,0.631695121527
+Time,Coop Total Loops,Coop Average Velocity,Coop Average Acceleration,Coop Average Deceleration,Coop Waiting Time,Non-Coop Total Loops,Non-Coop Average Velocity,Non-Coop Average Acceleration,Non-Coop Average Deceleration,Non-Coops Waiting Time
+30.0,56,1.1034984849494842,0.0063322625010554644,0.012170901710243855,2.038497977786594,51,1.003682397935594,0.014608967557857776,0.024294049300926726,2.0200810697343616

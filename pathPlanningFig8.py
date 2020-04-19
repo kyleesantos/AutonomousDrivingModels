@@ -39,7 +39,7 @@ class Env():
 		self.vehicles = None
 		self.vehiclesApproachingIntersection = None
 		self.dataDict = dict()
-		self.dataDelayRange = (4, 6)
+		self.dataDelayRange = (10, 13)
 
 
 	# return value is how far ahead (along circle) that car2 is from car1
@@ -106,7 +106,8 @@ class Env():
 		for vehicle in self.vehicles:
 			if (vehicle.getID() != vehicleId): continue
 			numCars = data[0]
-			vehicle.setNumCarsBehind(numCars)
+			if (self.mode == COOP):
+				vehicle.setNumCarsBehind(numCars)
 			self.communicateData(vehicle, numCars + 1)
 
 
