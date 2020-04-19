@@ -1,12 +1,13 @@
 import argparse
 import csv
+import os
 
 from graphics import runGraphics
 
-fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Average Acceleration', 
+fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Average Acceleration',
             'Coop Average Deceleration', 'Coop Waiting Time', 'Non-Coop Total Loops',
-            'Non-Coop Average Velocity', 'Non-Coop Average Acceleration', 
-            'Non-Coop Average Deceleration', 'Non-Coops Waiting Time', ]
+            'Non-Coop Average Velocity', 'Non-Coop Average Acceleration',
+            'Non-Coop Average Deceleration', 'Non-Coops Waiting Time', 'Throughput Increase %']
 
 def getArgs():
     parser = argparse.ArgumentParser()
@@ -38,10 +39,15 @@ def toString(lists):
     return results
 
 def outputResults(results, path):
-    with open(path, 'w') as file:
-        csvWriter = csv.writer(file)
-        csvWriter.writerow(fields)
-        csvWriter.writerows(results)
+    if os.path.isfile(path):
+        with open(path, 'a+') as file:
+            csvWriter = csv.writer(file)
+            csvWriter.writerows(results)
+    else:
+        with open(path, 'w') as file:
+            csvWriter = csv.writer(file)
+            csvWriter.writerow(fields)
+            csvWriter.writerows(results)
 
 
 def main():

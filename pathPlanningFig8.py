@@ -335,7 +335,6 @@ class Env():
 			self.decision = self.getNextDecision()
 
 			if (self.decision):
-				print("self.decision is ", self.decision)
 				self.distributeDecision()
 
 		self.setVehiclesInCriticalSection()
