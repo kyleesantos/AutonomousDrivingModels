@@ -17,6 +17,11 @@ NON_COOP = 11
 MAX_DEG = 360.0
 MAX_RAD = 2 * math.pi
 
+LEFT_WITHIN_INTERSECTION_THETA1 = 30
+LEFT_WITHIN_INTERSECTION_THETA2 = 315
+RIGHT_WITHIN_INTERSECTION_THETA1 = 150
+RIGHT_WITHIN_INTERSECTION_THETA2 = 225
+
 def toRadians(deg):
   return (deg / MAX_DEG) * MAX_RAD
 
@@ -78,3 +83,9 @@ def getArcDistance(car1, car2=None, theta=None):
     if (angle1 < angle2): arcAngle = MAX_DEG - (angle2 - angle1)
     else: arcAngle = angle1 - angle2
   return (arcAngle / MAX_DEG) * circumference
+
+def withinIntersection(vehicle):
+  if vehicle.getDirection() == CLK:
+    return (LEFT_WITHIN_INTERSECTION_THETA1 <= vehicle.getTheta()) and (vehicle.getTheta() <= LEFT_WITHIN_INTERSECTION_THETA2)
+  else:
+    return (RIGHT_WITHIN_INTERSECTION_THETA1 <= vehicle.getTheta()) and (vehicle.getTheta() <= RIGHT_WITHIN_INTERSECTION_THETA2)
