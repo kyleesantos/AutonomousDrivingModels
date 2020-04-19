@@ -9,7 +9,7 @@ REAL_NEAR_INTER_THRESH = 24
 
 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersection
 REAL_AT_INTER_THRESH = 6
-REAL_MAX_CAR_SEPARATION = 8
+REAL_MAX_CAR_SEPARATION = 10
 REAL_CRITICAL_THRESH = 6
 MAX_PASSING_CARS = 4
 
@@ -134,6 +134,19 @@ class Env():
 		vehicle.setNumCarsBehind(0)
 
 		self.dataDict[vehicle.getID()] = []
+
+
+	def getNextVehicleInfo(self, vehicle):
+		closestDiff = MAX_DEG
+		closestSpeed = -1
+		closestVehicle = None
+		for vehicle2 in self.vehicles:
+			if vehicle != vehicle2 and vehicle.getDirection() == vehicle2.getDirection():
+				dist = getArcDistance(vehicle, car2=vehicle2)
+				if dist < closestDiff:
+					closestDiff = dist
+					closestSpeed = vehicle2.getAngSpeed()
+		return closestSpeed, closestDiff
 
 
 	# returns the length of the longest continuous string of cars that are
@@ -370,18 +383,33 @@ class Env():
 			leftDistances, rightDistances = self.getDistancesPerLane()
 			chains = (self.getChainsOfCars(leftDistances, following=True) +
 						self.getChainsOfCars(rightDistances, following=True))
-			print([[v.getID() for v in c] for c in chains])
 			for chain in chains:
 				leadingAccel = chain[0].getAcceleration()
 				for (i,vehicle) in enumerate(chain):
 					tempAccel = vehicle.getAcceleration()
 					if vehicle.isPassingIntersection() or not vehicle.isInCriticalSection():
-						vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
+						speed2, dist = self.getNextVehicleInfo(vehicle)
+						speedDiff = vehicle.getAngSpeed() - speed2
+						maxAccel = dist - toAngular(idm.BUFFER_DIST*2,vehicle.getRadius()) - (speedDiff / UPDATE_TIME) + leadingAccel
+
+						if (speedDiff > 0):
+							newAccel = min(max(leadingAccel, tempAccel),maxAccel)
+						else:
+							newAccel = max(leadingAccel, tempAccel)
+						vehicle.setAcceleration(newAccel, angular=True)
 					else:
-						print("Breaking chain at " + str(vehicle.getID()))
 						for j in range(i+1,len(chain)):
+							speed2, dist = self.getNextVehicleInfo(chain[j])
+							speedDiff = chain[j].getAngSpeed() - speed2
+							maxAccel = dist - toAngular(idm.BUFFER_DIST*2,chain[j].getRadius()) - (speedDiff / UPDATE_TIME) + tempAccel
 							currAccel = chain[j].getAcceleration()
-							chain[j].setAcceleration(max(tempAccel, currAccel), angular=True)
+
+							if (speedDiff > 0):
+								newAccel = min(max(currAccel, tempAccel),maxAccel)
+							else:
+								newAccel = max(currAccel, tempAccel)
+
+							chain[j].setAcceleration(newAccel, angular=True)
 						break
 
 
