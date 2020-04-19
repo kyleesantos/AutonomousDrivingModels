@@ -9,9 +9,9 @@ REAL_NEAR_INTER_THRESH = 24
 
 # vehicles with less than this arc distance to intersection are considerted to be 'at' intersection
 REAL_AT_INTER_THRESH = 6
-REAL_MAX_CAR_SEPARATION = 10
+REAL_MAX_CAR_SEPARATION = 8
 REAL_CRITICAL_THRESH = 6
-MAX_PASSING_CARS = 3
+MAX_PASSING_CARS = 4
 
 NEAR_INTER_THRESH = SCALE * REAL_NEAR_INTER_THRESH
 AT_INTER_THRESH = SCALE * REAL_AT_INTER_THRESH
@@ -282,9 +282,15 @@ class Env():
 		self.vehiclesApproachingIntersection = leftVehicles, rightVehicles
 
 		if (leftScore >= 0):
-			leftDecision = (CLK, min(numLeft, self.maxPassingCars))
+			if rightScore < 0:
+				leftDecision = (CLK, numLeft)
+			else:
+				leftDecision = (CLK, min(numLeft, self.maxPassingCars))
 		if (rightScore >= 0):
-			rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
+			if leftScore < 0:
+				rightDecision = (CTR_CLK, numRight)
+			else:
+				rightDecision = (CTR_CLK, min(numRight, self.maxPassingCars))
 
 		if self.mode == NON_COOP:
 			if (leftScore >= rightScore):
@@ -358,11 +364,13 @@ class Env():
 						else:
 							self.distributeDecision()
 
+		idm.updateAccels(vehicles)
+
 		if self.mode == COOP:
 			leftDistances, rightDistances = self.getDistancesPerLane()
 			chains = (self.getChainsOfCars(leftDistances, following=True) +
 						self.getChainsOfCars(rightDistances, following=True))
-			idm.updateAccels(vehicles)
+			print([[v.getID() for v in c] for c in chains])
 			for chain in chains:
 				leadingAccel = chain[0].getAcceleration()
 				for (i,vehicle) in enumerate(chain):
@@ -370,12 +378,11 @@ class Env():
 					if vehicle.isPassingIntersection() or not vehicle.isInCriticalSection():
 						vehicle.setAcceleration(max(leadingAccel, tempAccel), angular=True)
 					else:
+						print("Breaking chain at " + str(vehicle.getID()))
 						for j in range(i+1,len(chain)):
 							currAccel = chain[j].getAcceleration()
 							chain[j].setAcceleration(max(tempAccel, currAccel), angular=True)
 						break
-		else:
-			idm.updateAccels(vehicles)
 
 
 	def getRightOfWay(self):

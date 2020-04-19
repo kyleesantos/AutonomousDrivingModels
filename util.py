@@ -4,8 +4,8 @@ SCALE = 25 # pixels/m
 UPDATE_TIME = 0.015
 
 # Track Parameters
-LEFT_ENTRANCE_THETA = 35
-RIGHT_ENTRANCE_THETA = 145
+LEFT_ENTRANCE_THETA = 30
+RIGHT_ENTRANCE_THETA = 150
 LEFT_EXIT_THETA = 25
 RIGHT_EXIT_THETA = 155
 CTR_CLK = 1
@@ -18,9 +18,9 @@ MAX_DEG = 360.0
 MAX_RAD = 2 * math.pi
 
 LEFT_WITHIN_INTERSECTION_THETA1 = 30
-LEFT_WITHIN_INTERSECTION_THETA2 = 315
+LEFT_WITHIN_INTERSECTION_THETA2 = 316
 RIGHT_WITHIN_INTERSECTION_THETA1 = 150
-RIGHT_WITHIN_INTERSECTION_THETA2 = 225
+RIGHT_WITHIN_INTERSECTION_THETA2 = 224
 
 def toRadians(deg):
   return (deg / MAX_DEG) * MAX_RAD
@@ -86,6 +86,6 @@ def getArcDistance(car1, car2=None, theta=None):
 
 def withinIntersection(vehicle):
   if vehicle.getDirection() == CLK:
-    return (LEFT_WITHIN_INTERSECTION_THETA1 <= vehicle.getTheta()) or (vehicle.getTheta() >= LEFT_WITHIN_INTERSECTION_THETA2)
+    return (LEFT_WITHIN_INTERSECTION_THETA1 >= vehicle.getTheta()) or (vehicle.getTheta() >= LEFT_WITHIN_INTERSECTION_THETA2)
   else:
     return (RIGHT_WITHIN_INTERSECTION_THETA1 <= vehicle.getTheta()) and (vehicle.getTheta() <= RIGHT_WITHIN_INTERSECTION_THETA2)

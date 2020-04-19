@@ -54,12 +54,19 @@ def findObstaclesInOtherTrack(vehicle, vehicles):
     if vehicle.getDirection() == CLK:
         for veh in vehicles:
             if veh.getDirection() == CTR_CLK and withinIntersection(veh):
-                obstacles.append((MAX_DEG / 2) - veh.getTheta())
+                initTheta = veh.getTheta()
+                projTheta = (MAX_DEG / 2) - initTheta
+                if (projTheta < 0):
+                    projTheta += MAX_DEG
+                obstacles.append(projTheta)
     elif vehicle.getDirection() == CTR_CLK:
         for veh in vehicles:
             if veh.getDirection() == CLK and withinIntersection(veh):
-                print("here2")
-                obstacles.append((MAX_DEG / 2) - veh.getTheta())
+                initTheta = veh.getTheta()
+                projTheta = (MAX_DEG / 2) - initTheta
+                if initTheta > (MAX_DEG / 2):
+                    projTheta += MAX_DEG
+                obstacles.append(projTheta)
     return obstacles
 
 
@@ -68,8 +75,9 @@ def findClosestObstacleAhead(vehicle1, vehicles):
   closestSpeed = 0
   closestTheta = -1
   theta1 = vehicle1.getTheta()
-  thetas = [veh.getTheta() for veh in vehicles]
+  thetas = [veh.getTheta() for veh in vehicles if isOnPath(vehicle1, veh) and isDetectable(vehicle1, veh)]
   thetas.extend(findObstaclesInOtherTrack(vehicle1, vehicles))
+  numVehThetas = len(thetas)
   if not vehicle1.isPassingIntersection():
     if (vehicle1.getDirection() == CTR_CLK) and (theta1 < RIGHT_ENTRANCE_THETA):
         thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
@@ -84,7 +92,7 @@ def findClosestObstacleAhead(vehicle1, vehicles):
     if diff < closestDiff:
       closestDiff = diff
       closestTheta = theta2
-      if i < len(vehicles):
+      if i < numVehThetas:
         closestSpeed = vehicles[i].getAngSpeed()
       else:
         closestSpeed = 0
@@ -95,8 +103,8 @@ def findClosestObstacleAhead(vehicle1, vehicles):
 def updateAccels(vehicles):
   for vehicle1 in vehicles:
     # enforce information constraints
-    nearby_vehicles = findNearestOnPath(vehicle1, vehicles)
-    (closest_speed,diff) = findClosestObstacleAhead(vehicle1, nearby_vehicles)
+    # nearby_vehicles = findNearestOnPath(vehicle1, vehicles)
+    (closest_speed,diff) = findClosestObstacleAhead(vehicle1, vehicles)
     if diff < MAX_DEG:
       dist = MAX_RAD * vehicle1.getRadius() * (diff / MAX_DEG)
       lin_speed1 = abs(toLinear(vehicle1.getAngSpeed(), vehicle1.getRadius()))
