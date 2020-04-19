@@ -36,7 +36,7 @@ class Vehicle:
     self.canvas = []
     self.numCarsBehind = 0
     self.communicatedPresence = False
-    
+
     self.totAngSpeed = 0
     self.totAngAcceleration = 0
     self.totAngDeceleration = 0
@@ -202,8 +202,8 @@ class Vehicle:
   def getVehAngles(self):
     return self.vehAngles
 
-  # adds warning to vehicles list of warnings. 
-  # returns warnings the vehicles has not seen before 
+  # adds warning to vehicles list of warnings.
+  # returns warnings the vehicles has not seen before
   def addWarnings(self, warnings):
     result = []
     for warning in warnings:
@@ -222,7 +222,7 @@ class Vehicle:
     return self.r
 
   def getTheta(self):
-    return self.theta
+    return self.theta % MAX_DEG
 
   def isPassingIntersection(self):
     return self.passingIntersection

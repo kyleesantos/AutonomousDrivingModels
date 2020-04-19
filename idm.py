@@ -36,6 +36,7 @@ def isDetectable(vehicle1, vehicle2):
   return ((vehicle1 != vehicle2) and
           (math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2) <= math.pow(DETECTION_DIST, 2)))
 
+
 def isOnPath(vehicle1, vehicle2):
   return vehicle1.getDirection() == vehicle2.getDirection()
 
@@ -48,12 +49,27 @@ def findNearestOnPath(vehicle, vehicles):
   return nearby_vehicles
 
 
+def findObstaclesInOtherTrack(vehicle, vehicles):
+    obstacles = []
+    if vehicle.getDirection() == CLK:
+        for veh in vehicles:
+            if veh.getDirection() == CTR_CLK and withinIntersection(veh):
+                obstacles.append((MAX_DEG / 2) - veh.getTheta())
+    elif vehicle.getDirection() == CTR_CLK:
+        for veh in vehicles:
+            if veh.getDirection() == CLK and withinIntersection(veh):
+                print("here2")
+                obstacles.append((MAX_DEG / 2) - veh.getTheta())
+    return obstacles
+
+
 def findClosestObstacleAhead(vehicle1, vehicles):
   closestDiff = MAX_DEG
   closestSpeed = 0
   closestTheta = -1
   theta1 = vehicle1.getTheta()
   thetas = [veh.getTheta() for veh in vehicles]
+  thetas.extend(findObstaclesInOtherTrack(vehicle1, vehicles))
   if not vehicle1.isPassingIntersection():
     if (vehicle1.getDirection() == CTR_CLK) and (theta1 < RIGHT_ENTRANCE_THETA):
         thetas.append(RIGHT_ENTRANCE_THETA + toAngular(BUFFER_DIST/2,vehicle1.getRadius()))
