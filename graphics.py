@@ -174,8 +174,7 @@ def infoListToText():
 	txt = ""
 	for i in range(len(vehicles)):
 		v = vehicles[i]
-		txt += "{}. speed = {:.1f}, # cars behind = {}\n".format(i, v.getAngSpeed(),
-			v.getNumCarsBehind())
+		txt += "{}. speed = {:.1f}\n".format(i, v.getAngSpeed())
 	return txt
 
 def vehiclesMove():
