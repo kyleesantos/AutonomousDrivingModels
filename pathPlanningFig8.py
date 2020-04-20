@@ -11,7 +11,7 @@ REAL_NEAR_INTER_THRESH = 24
 REAL_AT_INTER_THRESH = 6
 REAL_MAX_CAR_SEPARATION = 10
 REAL_CRITICAL_THRESH = 6
-MAX_PASSING_CARS = 4
+MAX_PASSING_CARS = 3
 
 NEAR_INTER_THRESH = SCALE * REAL_NEAR_INTER_THRESH
 AT_INTER_THRESH = SCALE * REAL_AT_INTER_THRESH
@@ -378,6 +378,7 @@ class Env():
 
 		idm.updateAccels(vehicles)
 
+
 		if self.mode == COOP:
 			leftDistances, rightDistances = self.getDistancesPerLane()
 			chains = (self.getChainsOfCars(leftDistances, following=True) +
@@ -410,6 +411,7 @@ class Env():
 
 							chain[j].setAcceleration(newAccel, angular=True)
 						break
+
 
 
 	def getRightOfWay(self):

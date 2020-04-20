@@ -6,7 +6,7 @@ from util import *
 REAL_OPT_VELOCITY = 0.2  # m/s
 REAL_MAX_ACCEL = 0.1     # m/s2
 REAL_OPT_DECEL = 0.1     # m/s2
-REAL_BUFFER_DIST = 8   # m
+REAL_BUFFER_DIST = 7.5   # m
 REAL_DETECTION_DIST = 8  # m
 
 OPT_VELOCITY = SCALE * REAL_OPT_VELOCITY  # pixels/s

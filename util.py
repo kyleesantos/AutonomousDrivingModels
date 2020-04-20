@@ -1,6 +1,6 @@
 import math
 
-SCALE = 25 # pixels/m
+SCALE = 20 # pixels/m
 UPDATE_TIME = 0.015
 
 # Track Parameters
@@ -88,4 +88,4 @@ def withinIntersection(vehicle):
   if vehicle.getDirection() == CLK:
     return (LEFT_WITHIN_INTERSECTION_THETA1 >= vehicle.getTheta()) or (vehicle.getTheta() >= LEFT_WITHIN_INTERSECTION_THETA2)
   else:
-    return (RIGHT_WITHIN_INTERSECTION_THETA1 >= vehicle.getTheta()) and (vehicle.getTheta() <= RIGHT_WITHIN_INTERSECTION_THETA2)
+    return (RIGHT_WITHIN_INTERSECTION_THETA1 <= vehicle.getTheta()) and (vehicle.getTheta() <= RIGHT_WITHIN_INTERSECTION_THETA2)

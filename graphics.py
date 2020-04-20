@@ -174,7 +174,12 @@ def infoListToText():
 	txt = ""
 	for i in range(len(vehicles)):
 		v = vehicles[i]
-		txt += "{}. speed = {:.1f}\n".format(i, v.getAngSpeed())
+		if mode == COOP:
+			txt += "{}. speed = {:.1f}, # cars behind = {}\n".format(i, v.getAngSpeed(),
+				v.getNumCarsBehind())
+		else:
+			txt += "{}. speed = {:.1f}, # cars behind = {}\n".format(i, v.getAngSpeed(),
+				"n/a")
 	return txt
 
 def vehiclesMove():
@@ -426,4 +431,6 @@ def runGraphics(tFlag=False, tLists=None):
 		root.bind("<Key>", keyPress)
 		root.bind("<Button-1>", mousePress)
 		root.mainloop()
+
+#runGraphics()
 
