@@ -27,14 +27,11 @@ class Env():
 		self.intersection = None # should be set by setIntersection if track_config is figure_8
 		self.nearIntersectionThreshold = NEAR_INTER_THRESH
 		self.atIntersectionThreshold = AT_INTER_THRESH
-		self.pendingLeft = 0 # number of vehicles pending from left side
-		self.pendingRight = 0 # number of vehicles pending from right side
-		self.passingVehicle = None # vehicle currently passing through intersection
 		self.weights = None
 		self.maxPassingCars = MAX_PASSING_CARS
 		self.vehiclesAtIntersection = None
 		self.maxCarSeparation = MAX_CAR_SEPARATION
-		self.decision = None # decision is a list of 'decisions' where a decision is a tuple indicating a side and number of cars to let through
+		self.decision = None # decision is a list o 'decisions' where a decision is a tuple indicating a side and number of cars to let through
 		self.lastPassingVehicle = None
 		self.vehicles = None
 		self.vehiclesApproachingIntersection = None
@@ -265,6 +262,7 @@ class Env():
 		leftDistances = [tup[1] for tup in leftVehicles]
 		rightDistances = [tup[1] for tup in rightVehicles]
 
+
 		# one person goes in non coop mode
 		if self.mode == NON_COOP:
 			numLeft = 1
@@ -272,6 +270,7 @@ class Env():
 		elif self.mode == COOP:
 			numLeft = self.getNumCarsInString(leftDistances)
 			numRight = self.getNumCarsInString(rightDistances)
+
 
 		leftScore = self.getSideScore((atLeft, numLeft, leftDistances))
 		rightScore = self.getSideScore((atRight, numRight, rightDistances))
@@ -363,6 +362,7 @@ class Env():
 			chains = (self.getChainsOfCars(leftDistances, following=True) +
 						self.getChainsOfCars(rightDistances, following=True))
 			idm.updateAccels(vehicles)
+
 			for chain in chains:
 				leadingAccel = chain[0].getAcceleration()
 				for (i,vehicle) in enumerate(chain):

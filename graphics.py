@@ -427,3 +427,4 @@ def runGraphics(tFlag=False, tLists=None):
 		root.bind("<Key>", keyPress)
 		root.bind("<Button-1>", mousePress)
 		root.mainloop()
+
