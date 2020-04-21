@@ -2,6 +2,7 @@ import math
 import numpy as np
 import random
 from util import *
+from vehicle import VEH_LENGTH, WHE_LENGTH
 import idm
 
 # vehicles with less than this arc distance to intersection are considered as 'approaching' intersection
@@ -39,33 +40,11 @@ class Env():
 		self.dataDelayRange = (10, 13)
 
 
-	# return value is how far ahead (along circle) that car2 is from car1
-	# should only be called with two cars from the same side/circle else
-	# set theta to find distance between car1 and a location on its circle
-	def getArcDistance(self, car1, car2=None, theta=None):
-		if (car1 == car2): return 0
-
-		angle1 = car1.getTheta()
-		if (theta is None):
-			angle2 = car2.getTheta()
-		else:
-			angle2 = theta
-		circumference = MAX_RAD * car1.getRadius()
-
-		if (car1.getDirection() == CTR_CLK):
-			if (angle2 < angle1): arcAngle = MAX_DEG - (angle1 - angle2)
-			else: arcAngle = angle2 - angle1
-		else:
-			if (angle1 < angle2): arcAngle = MAX_DEG - (angle2 - angle1)
-			else: arcAngle = angle1 - angle2
-
-		return (arcAngle / MAX_DEG) * circumference
-
 	def isApproachingIntersection(self, vehicle):
 		if vehicle.getDirection() == CLK:
-			arcDistance = self.getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
+			arcDistance = getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
 		else:
-			arcDistance = self.getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
+			arcDistance = getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
 
 		return (arcDistance < self.nearIntersectionThreshold)
 
@@ -135,15 +114,14 @@ class Env():
 
 	def getNextVehicleInfo(self, vehicle):
 		closestDiff = MAX_DEG
-		closestSpeed = -1
 		closestVehicle = None
 		for vehicle2 in self.vehicles:
-			if vehicle != vehicle2 and vehicle.getDirection() == vehicle2.getDirection():
-				dist = getArcDistance(vehicle, car2=vehicle2)
-				if dist < closestDiff:
+			if vehicle.getDirection() == vehicle2.getDirection():
+				dist = toAngular(getArcDistance(vehicle, car2=vehicle2), vehicle.getRadius())
+				if dist < closestDiff and dist > 0:
 					closestDiff = dist
-					closestSpeed = vehicle2.getAngSpeed()
-		return closestSpeed, closestDiff
+					closestVehicle = vehicle2
+		return closestVehicle, closestDiff
 
 
 	# returns the length of the longest continuous string of cars that are
@@ -174,7 +152,7 @@ class Env():
 				currChain.append(vehiclesDistances[i][0])
 		if (following and len(allChains) > 0 and
 			allChains[0][0].getDirection() == self.getRightOfWay()):
-			lastDist = self.getArcDistance(allChains[0][0], car2=currChain[-1])
+			lastDist = getArcDistance(allChains[0][0], car2=currChain[-1])
 			if lastDist < self.maxCarSeparation:
 				allChains[0] = currChain + allChains[0]
 			else:
@@ -215,11 +193,11 @@ class Env():
 
 		for vehicle in self.vehicles:
 			if vehicle.getDirection() == CLK:
-				arcDistance = self.getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
 				if (arcDistance < self.nearIntersectionThreshold):
 					leftVehicles.append((vehicle, arcDistance))
 			else:
-				arcDistance = self.getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if (arcDistance < self.nearIntersectionThreshold):
 					rightVehicles.append((vehicle, arcDistance))
 
@@ -234,10 +212,10 @@ class Env():
 
 		for vehicle in self.vehicles:
 			if vehicle.getDirection() == CLK:
-				arcDistance = self.getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(vehicle, theta=LEFT_ENTRANCE_THETA)
 				leftVehicles.append((vehicle, arcDistance))
 			else:
-				arcDistance = self.getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(vehicle, theta=RIGHT_ENTRANCE_THETA)
 				rightVehicles.append((vehicle, arcDistance))
 
 		leftVehicles.sort(key=lambda tup: tup[1])
@@ -250,11 +228,11 @@ class Env():
 
 		for vehicle in self.vehicles:
 			if (vehicle.getDirection() == CLK):
-				arcDistance = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
 				if (arcDistance < self.atIntersectionThreshold):
 					atLeft = True
 			else:
-				arcDistance = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if (arcDistance < self.atIntersectionThreshold):
 					atRight = True
 
@@ -319,11 +297,11 @@ class Env():
 		# get vehicles close to intersection at both lanes
 		for vehicle in self.vehicles:
 			if (vehicle.getDirection() == CLK):
-				arcDistance = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
 				if (arcDistance < CRITICAL_THRESH):
 					vehicle.setInCriticalSection(True)
 			elif (vehicle.getDirection() == CTR_CLK):
-				arcDistance = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
+				arcDistance = getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if (arcDistance < CRITICAL_THRESH):
 					vehicle.setInCriticalSection(True)
 
@@ -361,9 +339,9 @@ class Env():
 			if (vehicle.isPassingIntersection()):
 				posY = vehicle.getPos()[1]
 				if (vehicle.getDirection() == CLK):
-					distToIntersection = self.getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
+					distToIntersection = getArcDistance(car1=vehicle, theta=LEFT_ENTRANCE_THETA)
 				else:
-					distToIntersection = self.getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
+					distToIntersection = getArcDistance(car1=vehicle, theta=RIGHT_ENTRANCE_THETA)
 				if ((posY > self.intersection[1]) and (distToIntersection > self.nearIntersectionThreshold)):
 					vehicle.setPassingIntersection(passing=False)
 					vehicle.setInCriticalSection(False)
@@ -388,30 +366,27 @@ class Env():
 				for (i,vehicle) in enumerate(chain):
 					tempAccel = vehicle.getAcceleration()
 					if vehicle.isPassingIntersection() or not vehicle.isInCriticalSection():
-						speed2, dist = self.getNextVehicleInfo(vehicle)
-						speedDiff = vehicle.getAngSpeed() - speed2
-						maxAccel = dist - toAngular(idm.BUFFER_DIST*2,vehicle.getRadius()) - (speedDiff / UPDATE_TIME) + leadingAccel
+						newAccel = max(leadingAccel, tempAccel)
 
-						if (speedDiff > 0):
-							newAccel = min(max(leadingAccel, tempAccel),maxAccel)
-						else:
-							newAccel = max(leadingAccel, tempAccel)
-						vehicle.setAcceleration(newAccel, angular=True)
+						vehicle2, dist = self.getNextVehicleInfo(vehicle)
+						updatedSpeed2 = abs(vehicle2.getAngSpeed()) + vehicle2.getAcceleration()
+						maxAccel = (updatedSpeed2 - abs(vehicle.getAngSpeed()) +
+							(dist - toAngular(2*VEH_LENGTH + 3*WHE_LENGTH, vehicle.getRadius())))
+
+						vehicle.setAcceleration(min(newAccel, maxAccel), angular=True)
+						print(toAngular(2 * VEH_LENGTH, vehicle.getRadius()))
 					else:
 						for j in range(i+1,len(chain)):
-							speed2, dist = self.getNextVehicleInfo(chain[j])
-							speedDiff = chain[j].getAngSpeed() - speed2
-							maxAccel = dist - toAngular(idm.BUFFER_DIST*2,chain[j].getRadius()) - (speedDiff / UPDATE_TIME) + tempAccel
 							currAccel = chain[j].getAcceleration()
+							newAccel = max(currAccel, tempAccel)
 
-							if (speedDiff > 0):
-								newAccel = min(max(currAccel, tempAccel),maxAccel)
-							else:
-								newAccel = max(currAccel, tempAccel)
+							vehicle2, dist = self.getNextVehicleInfo(chain[j])
+							updatedSpeed2 = abs(vehicle2.getAngSpeed()) + vehicle2.getAcceleration()
+							maxAccel = (updatedSpeed2 - abs(chain[j].getAngSpeed()) +
+								(dist - toAngular(2*VEH_LENGTH + 3*WHE_LENGTH, chain[j].getRadius())))
 
-							chain[j].setAcceleration(newAccel, angular=True)
+							chain[j].setAcceleration(min(newAccel, maxAccel), angular=True)
 						break
-
 
 
 	def getRightOfWay(self):

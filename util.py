@@ -1,6 +1,6 @@
 import math
 
-SCALE = 20 # pixels/m
+SCALE = 25 # pixels/m
 UPDATE_TIME = 0.015
 
 # Track Parameters
@@ -18,9 +18,9 @@ MAX_DEG = 360.0
 MAX_RAD = 2 * math.pi
 
 LEFT_WITHIN_INTERSECTION_THETA1 = 30
-LEFT_WITHIN_INTERSECTION_THETA2 = 316
+LEFT_WITHIN_INTERSECTION_THETA2 = 315
 RIGHT_WITHIN_INTERSECTION_THETA1 = 150
-RIGHT_WITHIN_INTERSECTION_THETA2 = 224
+RIGHT_WITHIN_INTERSECTION_THETA2 = 225
 
 def toRadians(deg):
   return (deg / MAX_DEG) * MAX_RAD
@@ -66,6 +66,10 @@ def vehicleIntersectionCollide(veh1, veh2):
 
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
+
+# return value is how far ahead (along circle) that car2 is from car1
+# should only be called with two cars from the same side/circle else
+# set theta to find distance between car1 and a location on its circle
 def getArcDistance(car1, car2=None, theta=None):
   if (car1 == car2): return 0
 
