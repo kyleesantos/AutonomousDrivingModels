@@ -371,7 +371,7 @@ class Env():
 						vehicle2, dist = self.getNextVehicleInfo(vehicle)
 						updatedSpeed2 = abs(vehicle2.getAngSpeed()) + vehicle2.getAcceleration()
 						maxAccel = (updatedSpeed2 - abs(vehicle.getAngSpeed()) +
-							(dist - toAngular(2*VEH_LENGTH + 3*WHE_LENGTH, vehicle.getRadius())))
+							(dist - toAngular(2*VEH_LENGTH + 4*WHE_LENGTH, vehicle.getRadius())))
 
 						vehicle.setAcceleration(min(newAccel, maxAccel), angular=True)
 					else:
@@ -382,7 +382,7 @@ class Env():
 							vehicle2, dist = self.getNextVehicleInfo(chain[j])
 							updatedSpeed2 = abs(vehicle2.getAngSpeed()) + vehicle2.getAcceleration()
 							maxAccel = (updatedSpeed2 - abs(chain[j].getAngSpeed()) +
-								(dist - toAngular(2*VEH_LENGTH + 3*WHE_LENGTH, chain[j].getRadius())))
+								(dist - toAngular(2*VEH_LENGTH + 4*WHE_LENGTH, chain[j].getRadius())))
 
 							chain[j].setAcceleration(min(newAccel, maxAccel), angular=True)
 						break
