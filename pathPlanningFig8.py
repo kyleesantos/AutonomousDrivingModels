@@ -374,7 +374,6 @@ class Env():
 							(dist - toAngular(2*VEH_LENGTH + 3*WHE_LENGTH, vehicle.getRadius())))
 
 						vehicle.setAcceleration(min(newAccel, maxAccel), angular=True)
-						print(toAngular(2 * VEH_LENGTH, vehicle.getRadius()))
 					else:
 						for j in range(i+1,len(chain)):
 							currAccel = chain[j].getAcceleration()
