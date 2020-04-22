@@ -2,7 +2,8 @@ import argparse
 import csv
 import os
 
-from graphics import runGraphics
+# from graphics import runGraphics
+from graphicsSim import runGraphics
 
 fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Average Acceleration',
             'Coop Average Deceleration', 'Coop Waiting Time', 'Non-Coop Total Loops',
