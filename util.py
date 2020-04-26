@@ -56,7 +56,6 @@ def vehicleIntersectionCollide(veh1, veh2):
     angR <= (MAX_DEG - RIGHT_ENTRANCE_THETA) and (angL <= LEFT_ENTRANCE_THETA or
     angL >= (MAX_DEG - LEFT_ENTRANCE_THETA)) and
     (veh1.getCarAngle() >= diff or (veh1.getCarAngle() >= abs(diff - 360))))
-  if temp: print("collide")
   return temp
 
 
