@@ -106,12 +106,13 @@ def checkStopTesting():
 
 def addAverages():
 	global allVehSpeed
-	allVehSpeed = [0, 0, 0, 0]
+	allVehSpeed = [0, 0, 0, 0, 0, 0, 0]
 	for v in vehicles:
-		speed = [v.getID(), v.getAvgAngSpeed(), v.getTotAngAcceleration(),
-			v.getTotAngDeceleration(), v.getWaitingTime()]
-		allVehSpeed = [allVehSpeed[i] + speed[i + 1] for i in range(len(allVehSpeed))]
-	allVehSpeed = [ veh / len(vehicles) for veh in allVehSpeed]
+		speed = [v.getAvgAngSpeed(), v.getWaitingTime(), v.getAvgAngAcceleration(),
+			v.getAvgAngDeceleration(), v.getNetAcceleration(), v.getTotCntAcceleration(), 
+			v.getTotCntDeceleration()]
+		allVehSpeed = [allVehSpeed[i] + speed[i] for i in range(len(allVehSpeed))]
+	allVehSpeed = [veh / (1.0 * len(vehicles)) for veh in allVehSpeed]
 
 
 def reset():

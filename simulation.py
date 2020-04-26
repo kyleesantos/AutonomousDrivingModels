@@ -5,13 +5,15 @@ import os
 # from graphics import runGraphics
 from graphicsSim import runGraphics
 
-fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Average Acceleration',
-            'Coop Average Deceleration', 'Coop Waiting Time', 'Non-Coop Total Loops',
-            'Non-Coop Average Velocity', 'Non-Coop Average Acceleration',
-            'Non-Coop Average Deceleration', 'Non-Coops Waiting Time', 'Throughput Increase %']
+fields = ['Time','Coop Total Loops', 'Coop Average Velocity', 'Coop Waiting Time', 'Coop Average Acceleration',
+            'Coop Average Deceleration', 'Coop Net Average Acceleration', 'Coop Total Count Acceleration', 
+            'Coop Total Count Deceleration', 'Non-Coop Total Loops', 'Non-Coop Average Velocity', 
+            'Non-Coops Waiting Time',  'Non-Coop Average Acceleration', 'Non-Coop Average Deceleration', 
+            'Non-Coop Net Average Acceleration', 'Non-Coop Total Count Acceleration', 'Non-Coop Total Count Deceleration',  
+            'Throughput Increase %']
 
 def getArgs():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser() 
     parser.add_argument('-i', required=False, type=str, help='Path to txt file for testing inputs')
     parser.add_argument('-o', required=False, type=str, help='Path to txt file for writing outputs')
     args = parser.parse_args()

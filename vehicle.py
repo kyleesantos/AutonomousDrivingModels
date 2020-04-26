@@ -40,6 +40,8 @@ class Vehicle:
     self.totAngSpeed = 0
     self.totAngAcceleration = 0
     self.totAngDeceleration = 0
+    self.totCntAcceleration = 0
+    self.totCntDeceleration = 0
     self.total = 0
     self.waitingTime = 0
 
@@ -175,10 +177,12 @@ class Vehicle:
   def _updateTotals(self, time):
     self.total += 1
     self.totAngSpeed += abs(self.angSpeed)
-    if (self.acceleration > 0 and self.acceleration > idm.MIN_ACCEL): 
-      self.totAngAcceleration += 1
-    elif (self.acceleration < 0 and self.acceleration < (-idm.MIN_ACCEL)): 
-      self.totAngDeceleration += 1
+    if (self.acceleration > 0): 
+      self.totAngAcceleration += self.acceleration
+      self.totCntAcceleration += 1
+    elif (self.acceleration < 0): 
+      self.totAngDeceleration += abs(self.acceleration)
+      self.totCntDeceleration += 1
     if (self.angSpeed == 0): self.waitingTime += (time * UPDATE_TIME)
 
   def _turn(self, time):
@@ -319,11 +323,22 @@ class Vehicle:
     if self.total == 0: return 0
     return (self.totAngSpeed / self.total)
 
-  def getTotAngAcceleration(self):
-    return self.totAngAcceleration
+  def getAvgAngAcceleration(self):
+    if self.total == 0: return 0
+    return (self.totAngAcceleration / self.total)
 
-  def getTotAngDeceleration(self):
-    return self.totAngDeceleration
+  def getAvgAngDeceleration(self):
+    if self.total == 0: return 0
+    return (self.totAngDeceleration / self.total)
+
+  def getTotCntAcceleration(self):
+    return self.totCntAcceleration
+
+  def getTotCntDeceleration(self):
+    return self.totCntDeceleration
+
+  def getNetAcceleration(self):
+    return ((self.totAngAcceleration - self.totAngDeceleration) / self.total)
 
   def getWaitingTime(self):
     return self.waitingTime
