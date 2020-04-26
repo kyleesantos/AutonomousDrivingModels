@@ -108,8 +108,8 @@ def addAverages():
 	global allVehSpeed
 	allVehSpeed = [0, 0, 0, 0]
 	for v in vehicles:
-		speed = [v.getID(), v.getAvgAngSpeed(), v.getAvgAngAcceleration(),
-			v.getAvgAngDeceleration(), v.getWaitingTime()]
+		speed = [v.getID(), v.getAvgAngSpeed(), v.getTotAngAcceleration(),
+			v.getTotAngDeceleration(), v.getWaitingTime()]
 		allVehSpeed = [allVehSpeed[i] + speed[i + 1] for i in range(len(allVehSpeed))]
 	allVehSpeed = [ veh / len(vehicles) for veh in allVehSpeed]
 
